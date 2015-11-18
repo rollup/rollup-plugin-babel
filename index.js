@@ -6,7 +6,6 @@ var assign = require( 'object-assign' );
 module.exports = function ( options ) {
 	options = assign( {}, options || {} );
 	var usedHelpers = [];
-	var index;
 
 	var filter = createFilter( options.include, options.exclude );
 	delete options.include;
