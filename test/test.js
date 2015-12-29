@@ -44,7 +44,7 @@ describe( 'rollup-plugin-babel', function () {
 		});
 	});
 
-	it.only( 'adds helpers', function () {
+	it( 'adds helpers', function () {
 		return rollup.rollup({
 			entry: 'samples/class/main.js',
 			plugins: [ babelPlugin() ]
