@@ -106,6 +106,13 @@ describe( 'rollup-plugin-babel', function () {
 		});
 	});
 
+	it( 'works with transform-decorators-legacy (#18)', function () {
+		return rollup.rollup({
+			entry: 'samples/transform-decorators-legacy/main.js',
+			plugins: [ babelPlugin() ]
+		});
+	});
+
 	it( 'checks config per-file', function () {
 		return rollup.rollup({
 			entry: 'samples/checks/main.js',
