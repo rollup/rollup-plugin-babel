@@ -15,6 +15,7 @@ function preflightCheck ( localOpts ) {
 	if ( ~check.indexOf( 'babelHelpers.classCallCheck' ) ) return BUNDLED;
 
 	console.log( check );
+	console.log( check.indexOf( 'babelHelpers.classCallCheck' ) );
 
 	throw new Error( 'An unexpected situation arose. Please raise an issue at https://github.com/rollup/rollup-plugin-babel/issues. Thanks!' );
 }
