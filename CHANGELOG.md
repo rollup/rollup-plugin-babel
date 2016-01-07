@@ -1,5 +1,9 @@
 # rollup-plugin-babel changelog
 
+## 2.3.7
+
+* Fix Babel helper binding renaming ([#31](https://github.com/rollup/rollup-plugin-babel/pull/31))
+
 ## 2.3.6
 
 * Fix cache misses in preflight check ([#29](https://github.com/rollup/rollup-plugin-babel/pull/29))
