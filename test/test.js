@@ -208,7 +208,7 @@ describe( 'rollup-plugin-babel', function () {
 			plugins: [ babelPlugin() ]
 		}).then( bundle => {
 			var generated = bundle.generate();
-			assert.equal( generated.code.indexOf( 'var typeof' ), -1 );
+			assert.equal( generated.code.indexOf( 'var typeof' ), -1, generated.code );
 		});
 	});
 });
