@@ -4,6 +4,8 @@ var rollup = require( 'rollup' );
 var SourceMapConsumer = require( 'source-map' ).SourceMapConsumer;
 var babelPlugin = require( '..' );
 
+require( 'source-map-support' ).install();
+
 process.chdir( __dirname );
 
 function getLocation ( source, charIndex ) {
@@ -28,7 +30,6 @@ function getLocation ( source, charIndex ) {
 }
 
 const consoleWarn = console.warn;
-
 
 describe( 'rollup-plugin-babel', function () {
 	this.timeout( 15000 );
@@ -106,17 +107,19 @@ describe( 'rollup-plugin-babel', function () {
 			entry: 'samples/class/main.js',
 			plugins: [ babelPlugin() ]
 		}).then( function ( bundle ) {
+			var target = 'log';
 			var generated = bundle.generate({ sourceMap: true });
 			var smc = new SourceMapConsumer( generated.map );
 
-			var loc = getLocation( generated.code, generated.code.indexOf( 'log' ) );
+			var loc = getLocation( generated.code, generated.code.indexOf( target ) );
+
 			var original = smc.originalPositionFor( loc );
 
 			assert.deepEqual( original, {
 				source: path.resolve( 'samples/class/main.js' ).split( path.sep ).join( '/' ),
 				line: 3,
 				column: 10,
-				name: null
+				name: target
 			});
 		});
 	});
@@ -137,7 +140,7 @@ describe( 'rollup-plugin-babel', function () {
 				assert.ok( false, 'promise should not fulfil' );
 			})
 			.catch( function ( err ) {
-				assert.ok( /es2015-rollup/.test( err.message ), 'Expected an error about external helpers or module transform, got "' + err.message + '"' );
+				assert.ok( /configuring-babel/.test( err.message ), 'Expected an error about external helpers or module transform, got "' + err.message + '"' );
 			});
 	});
 
@@ -146,7 +149,7 @@ describe( 'rollup-plugin-babel', function () {
 			entry: 'samples/runtime-helpers/main.js',
 			plugins: [ babelPlugin({ runtimeHelpers: true }) ],
 			onwarn: function ( msg ) {
-				assert.equal( msg, `Treating 'babel-runtime/helpers/classCallCheck' as external dependency` );
+				assert.equal( msg, 'Treating \'babel-runtime/helpers/classCallCheck\' as external dependency' );
 			}
 		}).then( function ( bundle ) {
 			var cjs = bundle.generate({ format: 'cjs' }).code;
@@ -159,7 +162,7 @@ describe( 'rollup-plugin-babel', function () {
 			entry: 'samples/named-function-helper/main.js',
 			plugins: [ babelPlugin() ],
 			onwarn: function ( msg ) {
-				assert.equal( msg, `Treating 'babel-runtime/helpers/classCallCheck' as external dependency` );
+				assert.equal( msg, 'Treating \'babel-runtime/helpers/classCallCheck\' as external dependency' );
 			}
 		}).then( function ( bundle ) {
 			var cjs = bundle.generate({ format: 'cjs' }).code;
@@ -176,15 +179,14 @@ describe( 'rollup-plugin-babel', function () {
 
 	it( 'warns on duplicated helpers', () => {
 		let messages = [];
-		console.warn = msg => messages.push( msg );
 
 		return rollup.rollup({
 			entry: 'samples/duplicated-helpers-warning/main.js',
-			plugins: [ babelPlugin() ]
+			plugins: [ babelPlugin() ],
+			onwarn: msg => messages.push( msg )
 		}).then( () => {
-			console.warn = consoleWarn;
 			assert.deepEqual( messages, [
-				`The 'classCallCheck' Babel helper is used more than once in your code. It's strongly recommended that you use the "external-helpers" plugin or the "es2015-rollup" preset. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information`
+				'The \'classCallCheck\' Babel helper is used more than once in your code. It\'s strongly recommended that you use the "external-helpers" plugin or the "es2015-rollup" preset. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information'
 			]);
 		});
 	});
