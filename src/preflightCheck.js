@@ -12,6 +12,8 @@ export default function preflightCheck ( options, dir ) {
 
 		options = assign( {}, options );
 		delete options.only;
+		delete options.ignore;
+
 		options.filename = join( dir, 'x.js' );
 
 		options.plugins = options.plugins ? options.plugins.concat( classes ) : [ classes ];
@@ -20,7 +22,7 @@ export default function preflightCheck ( options, dir ) {
 
 		if ( !~check.indexOf( 'export default' ) && !~check.indexOf( 'export { Foo as default }' ) ) throw new Error( 'It looks like your Babel configuration specifies a module transformer. Please disable it. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information' );
 
-		if ( ~check.indexOf( 'import _classCallCheck from "babel-runtime' ) ) helpers = RUNTIME;
+		if ( /import _classCallCheck from ["']babel-runtime/.test( check ) ) helpers = RUNTIME;
 		else if ( ~check.indexOf( 'function _classCallCheck' ) ) helpers = INLINE;
 		else if ( ~check.indexOf( 'babelHelpers' ) ) helpers = BUNDLED;
 
