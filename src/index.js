@@ -8,6 +8,7 @@ import { RUNTIME, BUNDLED, HELPERS } from './constants.js';
 const keywordHelpers = [ 'typeof', 'extends', 'instanceof' ];
 
 export default function babel ( options ) {
+	const originalOptions = options;
 	options = assign( {}, options || {} );
 	let inlineHelpers = {};
 
@@ -47,11 +48,13 @@ export default function babel ( options ) {
 			if ( id === HELPERS ) {
 				const pattern = new RegExp( `babelHelpers\\.(${keywordHelpers.join('|')})`, 'g' );
 
-				const helpers = buildExternalHelpers( externalHelpersWhitelist, 'var' )
+				var helpers = buildExternalHelpers( externalHelpersWhitelist, 'var' )
 					.replace( pattern, 'var _$1' )
 					.replace( /^babelHelpers\./gm, 'export var ' ) +
 					`\n\nexport { ${keywordHelpers.map( word => `_${word} as ${word}`).join( ', ')} }`;
-
+				// Apply babel transforming on helpers, in case ES5/ES3 transform plugins are set in options.
+				helpers = babelCore.transform( helpers, originalOptions ).code;
+				
 				return helpers;
 			}
 		},
