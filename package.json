@@ -34,7 +34,7 @@
     "babel-core": "6",
     "babel-plugin-transform-es2015-classes": "^6.9.0",
     "object-assign": "^4.1.0",
-    "rollup-pluginutils": "^1.5.0"
+    "rollup-pluginutils": "^2.0.1"
   },
   "devDependencies": {
     "babel-plugin-transform-decorators-legacy": "^1.3.4",
