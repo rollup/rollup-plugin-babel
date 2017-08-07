@@ -1,16 +1,7 @@
 import { join } from 'path';
 import { transform } from 'babel-core';
 import { INLINE, RUNTIME, BUNDLED } from './constants.js';
-
-function importHelperPlugin () {
-	return {
-		visitor: {
-			Program (path, state) {
-				state.file.addHelper('classCallCheck');
-			}
-		}
-	};
-}
+import importHelperPlugin from './helperPlugin.js';
 
 let preflightCheckResults = {};
 
