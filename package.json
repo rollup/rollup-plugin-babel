@@ -32,7 +32,6 @@
   },
   "dependencies": {
     "babel-core": "7.0.0-alpha.17",
-    "babel-plugin-transform-es2015-classes": "7.0.0-alpha.17",
     "rollup-pluginutils": "^1.5.0"
   },
   "devDependencies": {
