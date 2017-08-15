@@ -200,9 +200,9 @@ describe( 'rollup-plugin-babel', function () {
 			plugins: [ babelPlugin() ],
 			onwarn: msg => messages.push( msg )
 		}).then( () => {
-			assert.deepEqual( messages, [
-				'The \'classCallCheck\' Babel helper is used more than once in your code. It\'s strongly recommended that you use the "external-helpers" plugin or the "es2015-rollup" preset. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information'
-			]);
+			assert.deepEqual( messages, [{
+        message: 'The \'classCallCheck\' Babel helper is used more than once in your code. It\'s strongly recommended that you use the "external-helpers" plugin or the "es2015-rollup" preset. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information'
+			}]);
 		});
 	});
 
