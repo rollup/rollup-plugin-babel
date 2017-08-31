@@ -49,6 +49,8 @@ export default function babel ( options ) {
 
 				const helpers = buildExternalHelpers( externalHelpersWhitelist, 'var' )
 					.replace( pattern, 'var _$1' )
+					.replace('var babelHelpers = {};', '')
+					.replace('babelHelpers;', '')
 					.replace( /^babelHelpers\./gm, 'export var ' ) +
 					`\n\nexport { ${keywordHelpers.map( word => `_${word} as ${word}`).join( ', ')} }`;
 
