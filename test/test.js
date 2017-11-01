@@ -136,9 +136,9 @@ describe( 'rollup-plugin-babel', function () {
 		});
 	});
 
-	it( 'works with transform-decorators (#18)', function () {
+	it( 'works with proposal-decorators (#18)', function () {
 		return rollup.rollup({
-			entry: 'samples/transform-decorators/main.js',
+			entry: 'samples/proposal-decorators/main.js',
 			plugins: [ babelPlugin() ]
 		});
 	});

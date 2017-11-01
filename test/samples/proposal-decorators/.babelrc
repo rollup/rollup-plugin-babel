@@ -1,6 +1,6 @@
 {
   "presets": [ ["@babel/env", { "modules": false } ] ],
   "plugins": [
-    "transform-decorators"
+    "@babel/proposal-decorators"
   ]
 }
