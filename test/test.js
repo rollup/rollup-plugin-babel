@@ -3,7 +3,6 @@ var path = require( 'path' );
 var rollup = require( 'rollup' );
 var SourceMapConsumer = require( 'source-map' ).SourceMapConsumer;
 var babelPlugin = require( '..' );
-var babelsMajor = parseInt(require('babel-core').version, 10);
 
 // from ./src/constantss
 var HELPERS = 'rollupPluginBabelHelpers';
@@ -59,12 +58,6 @@ describe( 'rollup-plugin-babel', function () {
 			var generated = bundle.generate();
 			var code = generated.code;
 
-			if (babelsMajor < 7) {
-				assert.ok( code.indexOf( 'var classCallCheck =' ) !== -1, generated.code );
-				assert.ok( code.indexOf( 'var _classCallCheck =' ) === -1, generated.code );
-				return;
-			}
-
 			assert.ok( code.indexOf( 'function _classCallCheck' ) !== -1, generated.code );
 		});
 	});
@@ -76,12 +69,6 @@ describe( 'rollup-plugin-babel', function () {
 		}).then( function ( bundle ) {
 			var generated = bundle.generate();
 			var code = generated.code;
-
-			if (babelsMajor < 7) {
-				assert.ok( code.indexOf( 'var inherits' ) !== -1, generated.code );
-				assert.ok( code.indexOf( 'var _inherits' ) === -1, generated.code );
-				return;
-			}
 
 			assert.ok( code.indexOf( 'function _inherits' ) !== -1, generated.code );
 		});
@@ -174,7 +161,7 @@ describe( 'rollup-plugin-babel', function () {
 			entry: 'samples/runtime-helpers/main.js',
 			plugins: [ babelPlugin({ runtimeHelpers: true }) ],
 			onwarn: function ( msg ) {
-				assert.equal( msg, 'Treating \'babel-runtime/helpers/classCallCheck\' as external dependency' );
+				assert.equal( msg, 'Treating \'@babel/runtime/helpers/classCallCheck\' as external dependency' );
 			}
 		}).then( function ( bundle ) {
 			var cjs = bundle.generate({ format: 'cjs' }).code;

@@ -1,6 +1,6 @@
 {
-  "presets": [ ["es2015", { "modules": false } ] ],
+  "presets": [ ["@babel/env", { "modules": false } ] ],
   "plugins": [
-    ["transform-runtime", { "moduleName": "custom-name" }]
+    ["@babel/transform-runtime", { "moduleName": "custom-name" }]
   ]
 }

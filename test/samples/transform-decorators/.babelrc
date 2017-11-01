@@ -1,5 +1,5 @@
 {
-  "presets": [ ["es2015", { "modules": false } ] ],
+  "presets": [ ["@babel/env", { "modules": false } ] ],
   "plugins": [
     "transform-decorators"
   ]

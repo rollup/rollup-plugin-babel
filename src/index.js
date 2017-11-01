@@ -1,13 +1,10 @@
 import { dirname } from 'path';
-import { buildExternalHelpers, transform, version as babelVersion } from 'babel-core';
+import { buildExternalHelpers, transform } from '@babel/core';
 import { createFilter } from 'rollup-pluginutils';
 import preflightCheck from './preflightCheck.js';
 import helperPlugin from './helperPlugin.js';
 import { warnOnce } from './utils.js';
 import { RUNTIME, EXTERNAL, HELPERS } from './constants.js';
-
-const babelsMajor = parseInt(babelVersion, 10);
-const keywordHelpers = [ 'typeof', 'extends', 'instanceof' ];
 
 export default function babel ( options ) {
 	options = Object.assign( {}, options || {} );
@@ -47,17 +44,6 @@ export default function babel ( options ) {
 		load ( id ) {
 			if ( id !== HELPERS ) {
 				return;
-			}
-
-			if (babelsMajor < 7) {
-				const pattern = new RegExp( `babelHelpers\\.(${keywordHelpers.join('|')})`, 'g' );
-
-				const helpers = buildExternalHelpers( externalHelpersWhitelist, 'var' )
-					.replace( pattern, 'var _$1' )
-					.replace( /^babelHelpers\./gm, 'export var ' ) +
-					`\n\nexport { ${keywordHelpers.map( word => `_${word} as ${word}`).join( ', ')} }`;
-
-				return helpers;
 			}
 
 			return buildExternalHelpers( externalHelpersWhitelist, 'module' );
