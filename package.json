@@ -34,7 +34,7 @@
     "rollup-pluginutils": "^1.5.0"
   },
   "peerDependencies": {
-    "babel-core": "6 || 7 || ^7.0.0-alpha || ^7.0.0-beta || ^7.0.0-rc"
+    "babel-core": "6"
   },
   "devDependencies": {
     "babel-core": "7.0.0-alpha.17",
