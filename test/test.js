@@ -176,4 +176,12 @@ describe( 'rollup-plugin-babel', function () {
 		const { code } = await bundle('samples/typeof/main.js');
 		assert.equal( code.indexOf( 'var typeof' ), -1, code );
 	});
+
+	it( 'works around transform-decorators-legacy', async () => {
+		const { code } = await bundle('samples/transform-decorators-legacy/main.js', {
+			plugins: ["transform-decorators-legacy"],
+			babelrc: false
+		});
+		assert.equal( code, `'use strict';\n\n// empty\n`, code );
+	});
 });
