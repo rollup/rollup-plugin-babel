@@ -28,7 +28,7 @@ export default function preflightCheck ( options, dir ) {
 		let check = transform( inputCode, options ).code;
 
 		if ( ~check.indexOf('class ') ) {
-			options.plugins = (options.plugins || []).concat( fallbackClassTransform );
+			options.plugins = [fallbackClassTransform].concat(options.plugins || []);
 			check = transform( inputCode, options ).code;
 		}
 
