@@ -15,7 +15,7 @@ export default function preflightCheck ( options, dir ) {
 
 		options.filename = join( dir, 'x.js' );
 
-		options.plugins = options.plugins ? options.plugins.concat( importHelperPlugin ) : [ importHelperPlugin ];
+		options.plugins = [ importHelperPlugin ].concat(options.plugins || []);
 
 		const check = transform( 'export default class Foo {}', options ).code;
 
