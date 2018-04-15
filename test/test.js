@@ -131,6 +131,16 @@ describe( 'rollup-plugin-babel', function () {
 		});
 	});
 
+	it( 'works with bablerc: false and transform-decorators-legacy (#188)', function () {
+		return rollup.rollup({
+			entry: 'samples/transform-decorators-legacy/main.js',
+			plugins: [ babelPlugin({
+				babelrc: false,
+				plugins: [ 'transform-decorators-legacy', 'external-helpers' ],
+			}) ]
+		});
+	});
+
 	it( 'checks config per-file', function () {
 		return rollup.rollup({
 			entry: 'samples/checks/main.js',
