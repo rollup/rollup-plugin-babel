@@ -131,7 +131,7 @@ describe( 'rollup-plugin-babel', function () {
 		});
 	});
 
-	it( 'works with babelrc: false and transform-decorators-legacy (#188)', function () {
+	it( 'works with transform-decorators-legacy (#188)', function () {
 		return rollup.rollup({
 			entry: 'samples/transform-decorators-legacy/main.js',
 			plugins: [ babelPlugin() ]
