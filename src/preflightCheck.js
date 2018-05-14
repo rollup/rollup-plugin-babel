@@ -28,7 +28,10 @@ export default function preflightCheck ( options, dir ) {
 		let check = transform( inputCode, options ).code;
 
 		if ( ~check.indexOf('class ') ) {
-			options.plugins = (options.plugins || []).concat( fallbackClassTransform );
+			options.plugins = (options.plugins || []).concat([
+				'@babel/plugin-transform-classes',
+				fallbackClassTransform,
+			]);
 			check = transform( inputCode, options ).code;
 		}
 
