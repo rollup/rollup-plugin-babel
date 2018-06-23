@@ -1,7 +1,7 @@
 import { dirname } from 'path';
 import { buildExternalHelpers, transform } from 'babel-core';
 import { createFilter } from 'rollup-pluginutils';
-import preflightCheck from './preflightCheck.js';
+import createPreflightCheck from './preflightCheck.js';
 import { warnOnce } from './utils.js';
 import { RUNTIME, BUNDLED, HELPERS } from './constants.js';
 
@@ -12,6 +12,7 @@ export default function babel ( options ) {
 	let inlineHelpers = {};
 
 	const filter = createFilter( options.include, options.exclude );
+	const preflightCheck = createPreflightCheck();
 	delete options.include;
 	delete options.exclude;
 
