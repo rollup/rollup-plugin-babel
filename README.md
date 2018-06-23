@@ -118,8 +118,7 @@ rollup.rollup({
   ...,
   plugins: [
     babel({
-      plugins: ['external-helpers'],
-      externalHelpers: true
+      plugins: ['external-helpers']
     })
   ]
 }).then(...)
