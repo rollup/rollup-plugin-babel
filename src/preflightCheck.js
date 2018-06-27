@@ -33,19 +33,19 @@ export default function createPreflightCheck () {
 				check = transform( inputCode, options ).code;
 			}
 
-			if ( ~check.indexOf( 'import _inherits' ) ) helpers = RUNTIME;
-			else if ( ~check.indexOf( 'function _inherits' ) ) helpers = INLINE;
-			else if ( ~check.indexOf( 'babelHelpers' ) ) helpers = EXTERNAL;
-			else {
-				ctx.error( 'An unexpected situation arose. Please raise an issue at https://github.com/rollup/rollup-plugin-babel/issues. Thanks!' );
-			}
-
 			if (
 				!~check.indexOf( 'export default' ) &&
 				!~check.indexOf( 'export default Foo' ) &&
 				!~check.indexOf( 'export { Foo as default }' )
 			) {
 				ctx.error( 'It looks like your Babel configuration specifies a module transformer. Please disable it. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information' );
+			}
+
+			if ( ~check.indexOf( '@babel/runtime/helpers/inherits' ) ) helpers = RUNTIME;
+			else if ( ~check.indexOf( 'function _inherits' ) ) helpers = INLINE;
+			else if ( ~check.indexOf( 'babelHelpers' ) ) helpers = EXTERNAL;
+			else {
+				ctx.error( 'An unexpected situation arose. Please raise an issue at https://github.com/rollup/rollup-plugin-babel/issues. Thanks!' );
 			}
 
 			preflightCheckResults[ dir ] = helpers;
