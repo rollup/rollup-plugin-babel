@@ -138,6 +138,18 @@ describe( 'rollup-plugin-babel', function () {
 		});
 	});
 
+	it( 'allows transform-runtime to be used instead of bundled helpers, but throws when CommonJS is used', () => {
+		return bundle(
+			'samples/runtime-helpers-commonjs/main.js',
+			{ runtimeHelpers: true }
+		).then(() => {
+			assert.ok(false);
+		}).catch((error) => {
+			// It looks like your Babel configuration specifies a module transformer.
+			assert.ok( ~error.message.indexOf( 'It looks like your Babel configuration specifies a module transformer. Please disable it.' ) );
+		});
+	});
+
 	it( 'allows transform-runtime to be used with custom moduleName', () => {
 		let warnCalled = false;
 		return bundle(
