@@ -41,7 +41,7 @@ export default function createPreflightCheck () {
 				ctx.error( 'It looks like your Babel configuration specifies a module transformer. Please disable it. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information' );
 			}
 
-			if ( ~check.indexOf( '@babel/runtime/helpers/inherits' ) ) helpers = RUNTIME;
+			if ( ~check.indexOf( '/helpers/inherits' ) ) helpers = RUNTIME;
 			else if ( ~check.indexOf( 'function _inherits' ) ) helpers = INLINE;
 			else if ( ~check.indexOf( 'babelHelpers' ) ) helpers = EXTERNAL;
 			else {
