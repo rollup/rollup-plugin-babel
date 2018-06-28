@@ -145,8 +145,7 @@ describe( 'rollup-plugin-babel', function () {
 		).then(() => {
 			assert.ok(false);
 		}).catch((error) => {
-			// It looks like your Babel configuration specifies a module transformer.
-			assert.ok( ~error.message.indexOf( 'It looks like your Babel configuration specifies a module transformer. Please disable it.' ) );
+			assert.ok( ~error.message.indexOf( 'Rollup requires that your Babel configuration keeps ES6 module syntax intact.' ) );
 		});
 	});
 

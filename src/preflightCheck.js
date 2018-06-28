@@ -38,7 +38,7 @@ export default function createPreflightCheck () {
 				!~check.indexOf( 'export default Foo' ) &&
 				!~check.indexOf( 'export { Foo as default }' )
 			) {
-				ctx.error( 'It looks like your Babel configuration specifies a module transformer. Please disable it. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information' );
+				ctx.error( 'Rollup requires that your Babel configuration keeps ES6 module syntax intact. Unfortunately it looks like your configuration specifies a module transformer to replace ES6 modules with CommonJS. To continue you have to disable it. Most commonly it\'s a CommonJS transform added by @babel/preset-env - in such case you should disable it by adding `modules: false` option to that preset (described in more detail here - https://github.com/rollup/rollup-plugin-babel#modules ).' );
 			}
 
 			if ( ~check.indexOf( '/helpers/inherits' ) ) helpers = RUNTIME;
