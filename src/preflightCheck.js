@@ -54,7 +54,8 @@ export default function createPreflightCheck () {
 				ctx.error( MODULE_ERROR );
 			}
 
-			if ( ~check.indexOf( '/helpers/inherits' ) ) helpers = RUNTIME;
+      console.log(check)
+      if ( check.match( /\/helpers\/(builtin\/)?(es6\/)?inherits/ ) ) helpers = RUNTIME;
 			else if ( ~check.indexOf( 'function _inherits' ) ) helpers = INLINE;
 			else if ( ~check.indexOf( 'babelHelpers' ) ) helpers = EXTERNAL;
 			else {
