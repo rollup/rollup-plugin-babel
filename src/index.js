@@ -1,18 +1,18 @@
 import { dirname } from 'path';
 import { buildExternalHelpers, transform } from 'babel-core';
 import { createFilter } from 'rollup-pluginutils';
-import preflightCheck from './preflightCheck.js';
+import createPreflightCheck from './preflightCheck.js';
 import { warnOnce } from './utils.js';
 import { RUNTIME, BUNDLED, HELPERS } from './constants.js';
 
 const keywordHelpers = [ 'typeof', 'extends', 'instanceof' ];
 
 export default function babel ( options ) {
-	const originalOptions = options;
 	options = Object.assign( {}, options || {} );
 	let inlineHelpers = {};
 
 	const filter = createFilter( options.include, options.exclude );
+	const preflightCheck = createPreflightCheck();
 	delete options.include;
 	delete options.exclude;
 
@@ -48,12 +48,14 @@ export default function babel ( options ) {
 			if ( id === HELPERS ) {
 				const pattern = new RegExp( `babelHelpers\\.(${keywordHelpers.join('|')})`, 'g' );
 
-				let helpers = buildExternalHelpers( externalHelpersWhitelist, 'var' )
+				const helpers = buildExternalHelpers( externalHelpersWhitelist, 'var' )
+					.replace(/^var babelHelpers = \{\};\n/gm, '')
+					.replace(/\nbabelHelpers;$/gm, '')
 					.replace( pattern, 'var _$1' )
 					.replace( /^babelHelpers\./gm, 'export var ' ) +
 					`\n\nexport { ${keywordHelpers.map( word => `_${word} as ${word}`).join( ', ')} }`;
 				// Apply babel transforming on helpers, in case ES5/ES3 transform plugins are set in options.
-				helpers = transform( helpers, originalOptions ).code;
+				helpers = transform( helpers, options ).code;
 				
 				return helpers;
 			}
