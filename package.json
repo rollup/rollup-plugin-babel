@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-babel",
-  "version": "3.0.5",
+  "version": "3.0.6",
   "description": "Seamless integration between Rollup and Babel.",
   "main": "dist/rollup-plugin-babel.cjs.js",
   "module": "dist/rollup-plugin-babel.es.js",
