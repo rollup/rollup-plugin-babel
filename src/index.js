@@ -54,7 +54,9 @@ export default function babel ( options ) {
 					.replace( pattern, 'var _$1' )
 					.replace( /^babelHelpers\./gm, 'export var ' ) +
 					`\n\nexport { ${keywordHelpers.map( word => `_${word} as ${word}`).join( ', ')} }`;
-
+				// Apply babel transforming on helpers, in case ES5/ES3 transform plugins are set in options.
+				helpers = transform( helpers, options ).code;
+				
 				return helpers;
 			}
 		},
