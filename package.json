@@ -3,12 +3,11 @@
   "version": "4.0.0-beta.7",
   "description": "Seamless integration between Rollup and Babel.",
   "main": "dist/rollup-plugin-babel.cjs.js",
-  "module": "dist/rollup-plugin-babel.es.js",
-  "jsnext:main": "dist/rollup-plugin-babel.es.js",
+  "module": "dist/rollup-plugin-babel.esm.js",
   "files": [
     "src",
     "dist/rollup-plugin-babel.cjs.js",
-    "dist/rollup-plugin-babel.es.js",
+    "dist/rollup-plugin-babel.esm.js",
     "README"
   ],
   "keywords": [
