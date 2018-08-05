@@ -6,9 +6,7 @@
   "module": "dist/rollup-plugin-babel.esm.js",
   "files": [
     "src",
-    "dist/rollup-plugin-babel.cjs.js",
-    "dist/rollup-plugin-babel.esm.js",
-    "README"
+    "dist"
   ],
   "keywords": [
     "rollup-plugin",
