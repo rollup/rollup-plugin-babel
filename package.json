@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@babel/helper-module-imports": "7.0.0-beta.56",
+    "hash.js": "^1.1.5",
     "rollup-pluginutils": "^2.3.0"
   },
   "peerDependencies": {

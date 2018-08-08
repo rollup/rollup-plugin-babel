@@ -5,6 +5,7 @@ import createPreflightCheck from './preflightCheck.js';
 import helperPlugin from './helperPlugin.js';
 import { warnOnce } from './utils.js';
 import { RUNTIME, EXTERNAL, HELPERS } from './constants.js';
+import sha256 from 'hash.js/lib/hash/sha/256';
 
 const unpackOptions = ({
 	// rollup uses sourcemap, babel uses sourceMaps
@@ -51,6 +52,16 @@ export default function babel ( options ) {
 			if ( !filter( id ) ) return null;
 			if ( id === HELPERS ) return null;
 
+			const cacheKey = `${id}|${code.length}`;
+			const digest = sha256().update(code).digest('hex');
+
+			const cache = this.cache && this.cache.get(cacheKey);
+			if (cache && digest === cache.digest) {
+				return cache.result;
+			} else {
+				this.cache && this.cache.delete(cacheKey);
+			}
+
 			const helpers = preflightCheck( this, babelOptions, dirname( id ) );
 
 			if ( helpers === EXTERNAL && !externalHelpers ) {
@@ -68,13 +79,16 @@ export default function babel ( options ) {
 			const transformed = transform( code, localOpts );
 
 			if (!transformed) {
+				this.cache && this.cache.set(cacheKey, { digest, result: { code } });
 				return { code };
 			}
 
-			return {
+			const result = {
 				code: transformed.code,
 				map: transformed.map
 			};
+			this.cache && this.cache.set(cacheKey, { digest, result });
+			return result;
 		}
 	};
 }
