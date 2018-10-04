@@ -22,7 +22,6 @@ build: off
 
 test_script:
   - node --version && npm --version
-  - echo -- BABEL 7 --
   - npm test
 
 matrix:
