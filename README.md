@@ -107,7 +107,7 @@ However, setting `modules: false` in your `.babelrc` may conflict if you are usi
 plugins: [
   babel({
     babelrc: false,
-    presets: [['env', { modules: false }]],
+    presets: [['@babel/preset-env', { modules: false }]],
   }),
 ];
 ```
