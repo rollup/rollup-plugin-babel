@@ -1,4 +1,4 @@
-import { buildExternalHelpers, DEFAULT_EXTENSIONS, loadPartialConfig, transform } from '@babel/core';
+import babelCore, { buildExternalHelpers, DEFAULT_EXTENSIONS, loadPartialConfig, transform } from '@babel/core';
 import { createFilter } from 'rollup-pluginutils';
 import createPreflightCheck from './preflightCheck.js';
 import helperPlugin from './helperPlugin.js';
@@ -27,7 +27,7 @@ const unpackOptions = ({
 	},
 });
 
-export default function babel(options) {
+function babel({ options, result, config, customOptions }) {
 	// TODO: remove it later, just provide a helpful warning to people for now
 	try {
 		loadPartialConfig({
@@ -49,7 +49,7 @@ export default function babel(options) {
 		include,
 		runtimeHelpers,
 		...babelOptions
-	} = unpackOptions(options);
+	} = customOptions ? customOptions(unpackOptions(options)) : unpackOptions(options);
 
 	const extensionRegExp = new RegExp(`(${extensions.map(escapeRegExpCharacters).join('|')})$`);
 	const includeExcludeFilter = createFilter(include, exclude);
@@ -94,20 +94,32 @@ export default function babel(options) {
 
 			const localOpts = {
 				filename: id,
-				...babelOptions,
+				...(config ? config(loadPartialConfig()) : babelOptions),
 				plugins: helpers !== RUNTIME ? [...babelOptions.plugins, helperPlugin] : babelOptions.plugins,
 			};
 
+			// TODO hook config here
 			const transformed = transform(code, localOpts);
 
+			let output;
 			if (!transformed) {
-				return { code };
+				output = { code };
+			} else {
+				output = {
+					code: transformed.code,
+					map: transformed.map,
+				};
 			}
 
-			return {
-				code: transformed.code,
-				map: transformed.map,
-			};
+			return result ? result(output) : output;
 		},
 	};
 }
+
+function babelPlugin(options) {
+	return babel({ options });
+}
+
+babelPlugin.custom = input => babel({ ...input(babelCore) });
+
+export default babelPlugin;
