@@ -95,10 +95,11 @@ function babel({ options, result, config, customOptions }) {
 			const localOpts = {
 				filename: id,
 				...(config ? config(loadPartialConfig()) : babelOptions),
-				plugins: helpers !== RUNTIME ? [...babelOptions.plugins, helperPlugin] : babelOptions.plugins,
 			};
+			localOpts.plugins = (helpers !== RUNTIME ? [...babelOptions.plugins, helperPlugin] : babelOptions.plugins).concat(
+				localOpts.plugins,
+			);
 
-			// TODO hook config here
 			const transformed = transform(code, localOpts);
 
 			let output;
@@ -120,6 +121,6 @@ function babelPlugin(options) {
 	return babel({ options });
 }
 
-babelPlugin.custom = input => babel({ ...input(babelCore) });
+babelPlugin.custom = input => babel(input(babelCore));
 
 export default babelPlugin;
