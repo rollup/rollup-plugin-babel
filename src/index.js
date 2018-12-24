@@ -1,4 +1,4 @@
-import babelCore, { buildExternalHelpers, DEFAULT_EXTENSIONS, loadPartialConfig, transform } from '@babel/core';
+import * as babel from '@babel/core';
 import { createFilter } from 'rollup-pluginutils';
 import createPreflightCheck from './preflightCheck.js';
 import helperPlugin from './helperPlugin.js';
@@ -6,7 +6,7 @@ import { escapeRegExpCharacters, warnOnce } from './utils.js';
 import { RUNTIME, EXTERNAL, HELPERS } from './constants.js';
 
 const unpackOptions = ({
-	extensions = DEFAULT_EXTENSIONS,
+	extensions = babel.DEFAULT_EXTENSIONS,
 	// rollup uses sourcemap, babel uses sourceMaps
 	// just normalize them here so people don't have to worry about it
 	sourcemap = true,
@@ -27,100 +27,103 @@ const unpackOptions = ({
 	},
 });
 
-function babel({ options, result, config, customOptions }) {
-	// TODO: remove it later, just provide a helpful warning to people for now
-	try {
-		loadPartialConfig({
-			caller: undefined,
-			babelrc: false,
-			configFile: false,
-		});
-	} catch (err) {
-		throw new Error(
-			'You should be using @babel/core@^7.0.0-rc.2. Please upgrade or pin rollup-plugin-babel to 4.0.0-beta.8',
-		);
-	}
+const returnObject = () => ({});
 
-	const {
-		exclude,
-		extensions,
-		externalHelpers,
-		externalHelpersWhitelist,
-		include,
-		runtimeHelpers,
-		...babelOptions
-	} = customOptions ? customOptions(unpackOptions(options)) : unpackOptions(options);
+function createBabelPluginFactory(customCallback = returnObject) {
+	const overrides = customCallback(babel);
 
-	const extensionRegExp = new RegExp(`(${extensions.map(escapeRegExpCharacters).join('|')})$`);
-	const includeExcludeFilter = createFilter(include, exclude);
-	const filter = id => extensionRegExp.test(id) && includeExcludeFilter(id);
-	const preflightCheck = createPreflightCheck();
+	return pluginOptions => {
+		let customOptions = null;
 
-	return {
-		name: 'babel',
+		if (overrides.customOptions) {
+			({ custom: customOptions = null, plugin: pluginOptions } = overrides.customOptions(pluginOptions));
+		}
 
-		resolveId(id) {
-			if (id === HELPERS) return id;
-		},
+		const {
+			exclude,
+			extensions,
+			externalHelpers,
+			externalHelpersWhitelist,
+			include,
+			runtimeHelpers,
+			...babelOptions
+		} = unpackOptions(pluginOptions);
 
-		load(id) {
-			if (id !== HELPERS) {
-				return;
-			}
+		const extensionRegExp = new RegExp(`(${extensions.map(escapeRegExpCharacters).join('|')})$`);
+		const includeExcludeFilter = createFilter(include, exclude);
+		const filter = id => extensionRegExp.test(id) && includeExcludeFilter(id);
+		const preflightCheck = createPreflightCheck();
 
-			return buildExternalHelpers(externalHelpersWhitelist, 'module');
-		},
+		return {
+			name: 'babel',
+			resolveId(id) {
+				if (id === HELPERS) return id;
+			},
+			load(id) {
+				if (id !== HELPERS) {
+					return;
+				}
 
-		transform(code, id) {
-			if (!filter(id)) return null;
-			if (id === HELPERS) return null;
+				return babel.buildExternalHelpers(externalHelpersWhitelist, 'module');
+			},
+			async transform(code, filename) {
+				if (!filter(filename)) return null;
+				if (filename === HELPERS) return null;
 
-			const helpers = preflightCheck(this, babelOptions, id);
+				const helpers = preflightCheck(this, babelOptions, filename);
 
-			if (!helpers) {
-				return { code };
-			}
+				// file was ignored
+				if (!helpers) {
+					return null;
+				}
 
-			if (helpers === EXTERNAL && !externalHelpers) {
-				warnOnce(
-					this,
-					'Using "external-helpers" plugin with rollup-plugin-babel is deprecated, as it now automatically deduplicates your Babel helpers.',
-				);
-			} else if (helpers === RUNTIME && !runtimeHelpers) {
-				this.error(
-					'Runtime helpers are not enabled. Either exclude the transform-runtime Babel plugin or pass the `runtimeHelpers: true` option. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information',
-				);
-			}
+				if (helpers === EXTERNAL && !externalHelpers) {
+					warnOnce(
+						this,
+						'Using "external-helpers" plugin with rollup-plugin-babel is deprecated, as it now automatically deduplicates your Babel helpers.',
+					);
+				} else if (helpers === RUNTIME && !runtimeHelpers) {
+					this.error(
+						'Runtime helpers are not enabled. Either exclude the transform-runtime Babel plugin or pass the `runtimeHelpers: true` option. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information',
+					);
+				}
 
-			const localOpts = {
-				filename: id,
-				...(config ? config(loadPartialConfig()) : babelOptions),
-			};
-			localOpts.plugins = (helpers !== RUNTIME ? [...babelOptions.plugins, helperPlugin] : babelOptions.plugins).concat(
-				localOpts.plugins,
-			);
+				const config = babel.loadPartialConfig({ ...babelOptions, filename });
 
-			const transformed = transform(code, localOpts);
+				const transformOptions = !overrides.config
+					? config.options
+					: await overrides.config.call(this, config, {
+							code,
+							customOptions,
+					  });
 
-			let output;
-			if (!transformed) {
-				output = { code };
-			} else {
-				output = {
-					code: transformed.code,
-					map: transformed.map,
-				};
-			}
+				transformOptions.plugins = (helpers !== RUNTIME
+					? babelOptions.plugins.concat(helperPlugin)
+					: babelOptions.plugins
+				).concat(transformOptions.plugins);
 
-			return result ? result(output) : output;
-		},
+				let result = babel.transform(code, transformOptions);
+
+				if (!result) {
+					return null;
+				}
+
+				if (overrides.result) {
+					result = await overrides.result.call(this, result, {
+						code,
+						customOptions,
+						config,
+						transformOptions,
+					});
+				}
+
+				return { code: result.code, map: result.code };
+			},
+		};
 	};
 }
 
-function babelPlugin(options) {
-	return babel({ options });
-}
+const babelPluginFactory = createBabelPluginFactory();
+babelPluginFactory.custom = createBabelPluginFactory;
 
-babelPlugin.custom = input => babel(input(babelCore));
-
-export default babelPlugin;
+export default babelPluginFactory;
