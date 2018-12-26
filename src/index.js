@@ -118,7 +118,7 @@ function createBabelPluginFactory(customCallback = returnObject) {
 									config,
 									transformOptions,
 							  }),
-					).then(result => ({ code: result.code, map: result.code }));
+					).then(result => ({ code: result.code, map: result.map }));
 				});
 			},
 		};
