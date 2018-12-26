@@ -66,15 +66,15 @@ function createBabelPluginFactory(customCallback = returnObject) {
 
 				return babel.buildExternalHelpers(externalHelpersWhitelist, 'module');
 			},
-			async transform(code, filename) {
-				if (!filter(filename)) return null;
-				if (filename === HELPERS) return null;
+			transform(code, filename) {
+				if (!filter(filename)) return Promise.resolve(null);
+				if (filename === HELPERS) return Promise.resolve(null);
 
 				const helpers = preflightCheck(this, babelOptions, filename);
 
 				// file was ignored
 				if (!helpers) {
-					return null;
+					return Promise.resolve(null);
 				}
 
 				if (helpers === EXTERNAL && !externalHelpers) {
@@ -90,34 +90,36 @@ function createBabelPluginFactory(customCallback = returnObject) {
 
 				const config = babel.loadPartialConfig({ ...babelOptions, filename });
 
-				const transformOptions = !overrides.config
-					? config.options
-					: await overrides.config.call(this, config, {
-							code,
-							customOptions,
-					  });
+				return Promise.resolve(
+					!overrides.config
+						? config.options
+						: overrides.config.call(this, config, {
+								code,
+								customOptions,
+						  }),
+				).then(transformOptions => {
+					transformOptions.plugins = (helpers !== RUNTIME
+						? babelOptions.plugins.concat(helperPlugin)
+						: babelOptions.plugins
+					).concat(transformOptions.plugins);
 
-				transformOptions.plugins = (helpers !== RUNTIME
-					? babelOptions.plugins.concat(helperPlugin)
-					: babelOptions.plugins
-				).concat(transformOptions.plugins);
+					let result = babel.transform(code, transformOptions);
 
-				let result = babel.transform(code, transformOptions);
+					if (!result) {
+						return null;
+					}
 
-				if (!result) {
-					return null;
-				}
-
-				if (overrides.result) {
-					result = await overrides.result.call(this, result, {
-						code,
-						customOptions,
-						config,
-						transformOptions,
-					});
-				}
-
-				return { code: result.code, map: result.code };
+					return Promise.resolve(
+						!overrides.result
+							? result
+							: overrides.result.call(this, result, {
+									code,
+									customOptions,
+									config,
+									transformOptions,
+							  }),
+					).then(result => ({ code: result.code, map: result.code }));
+				});
 			},
 		};
 	};
