@@ -26,7 +26,7 @@ npm install --save-dev rollup-plugin-babel@latest
 > babel 6.x
 
 ```bash
-npm install --save-dev rollup-plugin-babel@3
+npm install --save-dev rollup-plugin-babel@6
 ```
 
 ## Usage
