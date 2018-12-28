@@ -70,25 +70,12 @@ function createBabelPluginFactory(customCallback = returnObject) {
 				if (!filter(filename)) return Promise.resolve(null);
 				if (filename === HELPERS) return Promise.resolve(null);
 
-				const helpers = preflightCheck(this, babelOptions, filename);
+				const config = babel.loadPartialConfig({ ...babelOptions, filename });
 
-				// file was ignored
-				if (!helpers) {
+				// file is ignored
+				if (!config) {
 					return Promise.resolve(null);
 				}
-
-				if (helpers === EXTERNAL && !externalHelpers) {
-					warnOnce(
-						this,
-						'Using "external-helpers" plugin with rollup-plugin-babel is deprecated, as it now automatically deduplicates your Babel helpers.',
-					);
-				} else if (helpers === RUNTIME && !runtimeHelpers) {
-					this.error(
-						'Runtime helpers are not enabled. Either exclude the transform-runtime Babel plugin or pass the `runtimeHelpers: true` option. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information',
-					);
-				}
-
-				const config = babel.loadPartialConfig({ ...babelOptions, filename });
 
 				return Promise.resolve(
 					!overrides.config
@@ -98,16 +85,27 @@ function createBabelPluginFactory(customCallback = returnObject) {
 								customOptions,
 						  }),
 				).then(transformOptions => {
+					const helpers = preflightCheck(this, transformOptions);
+
+					if (helpers === EXTERNAL && !externalHelpers) {
+						warnOnce(
+							this,
+							'Using "external-helpers" plugin with rollup-plugin-babel is deprecated, as it now automatically deduplicates your Babel helpers.',
+						);
+					} else if (helpers === RUNTIME && !runtimeHelpers) {
+						this.error(
+							'Runtime helpers are not enabled. Either exclude the transform-runtime Babel plugin or pass the `runtimeHelpers: true` option. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information',
+						);
+					}
+
+					// TODO: check if babelOptions.plugins are in loaded partial config
+					// if they are there then we shouldnt reference babelOptions here
 					transformOptions.plugins = (helpers !== RUNTIME
 						? babelOptions.plugins.concat(helperPlugin)
 						: babelOptions.plugins
 					).concat(transformOptions.plugins);
 
-					let result = babel.transform(code, transformOptions);
-
-					if (!result) {
-						return null;
-					}
+					const result = babel.transformSync(code, transformOptions);
 
 					return Promise.resolve(
 						!overrides.result
@@ -118,7 +116,7 @@ function createBabelPluginFactory(customCallback = returnObject) {
 									config,
 									transformOptions,
 							  }),
-					).then(result => ({ code: result.code, map: result.map }));
+					).then(({ code, map }) => ({ code, map }));
 				});
 			},
 		};
