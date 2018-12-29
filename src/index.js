@@ -98,12 +98,9 @@ function createBabelPluginFactory(customCallback = returnObject) {
 						);
 					}
 
-					// TODO: check if babelOptions.plugins are in loaded partial config
-					// if they are there then we shouldnt reference babelOptions here
-					transformOptions.plugins = (helpers !== RUNTIME
-						? babelOptions.plugins.concat(helperPlugin)
-						: babelOptions.plugins
-					).concat(transformOptions.plugins);
+					if (helpers !== RUNTIME) {
+						transformOptions = { ...transformOptions, plugins: transformOptions.plugins.concat(helperPlugin) };
+					}
 
 					const result = babel.transformSync(code, transformOptions);
 
