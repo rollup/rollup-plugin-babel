@@ -17,7 +17,8 @@
   "homepage": "https://github.com/rollup/rollup-plugin-babel",
   "author": "Rich Harris",
   "contributors": [
-    "Bogdan Chadkin <trysound@yandex.ru>"
+    "Bogdan Chadkin <trysound@yandex.ru>",
+    "Mateusz Burzyński <mateuszburzynski@gmail.com> (https://github.com/Andarist)"
   ],
   "license": "MIT",
   "scripts": {
