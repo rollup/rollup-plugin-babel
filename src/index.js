@@ -35,8 +35,15 @@ function createBabelPluginFactory(customCallback = returnObject) {
 	return pluginOptions => {
 		let customOptions = null;
 
-		if (overrides.customOptions) {
-			({ custom: customOptions = null, plugin: pluginOptions } = overrides.customOptions(pluginOptions));
+		if (overrides.options) {
+			const overridden = overrides.options(pluginOptions);
+
+			if (typeof overridden.then === 'function') {
+				throw new Error(
+					".options hook can't be asynchronous. It should return `{ customOptions, pluginsOptions }` synchronously.",
+				);
+			}
+			({ customOptions = null, pluginOptions } = overridden);
 		}
 
 		const {

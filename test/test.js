@@ -291,9 +291,9 @@ describe('rollup-plugin-babel', function() {
 	it('supports overriding the plugin options in custom loader', () => {
 		const customBabelPlugin = babelPlugin.custom(() => {
 			return {
-				customOptions(options) {
+				options(options) {
 					// Ignore the js extension to test overriding the options
-					return { plugin: Object.assign({}, options, { extensions: ['.x'] }) };
+					return { pluginOptions: Object.assign({}, options, { extensions: ['.x'] }) };
 				},
 				config(cfg) {
 					return Object.assign({}, cfg.options, {
