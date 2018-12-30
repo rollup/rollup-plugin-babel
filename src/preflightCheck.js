@@ -1,5 +1,6 @@
 import { transformSync } from '@babel/core';
 import { INLINE, RUNTIME, EXTERNAL } from './constants.js';
+import { addBabelPlugin } from './utils.js';
 
 const MODULE_ERROR =
 	'Rollup requires that your Babel configuration keeps ES6 module syntax intact. ' +
@@ -39,10 +40,7 @@ export default function createPreflightCheck() {
 			let check = transformed.code;
 
 			if (~check.indexOf('class ')) {
-				check = transformSync(inputCode, {
-					...options,
-					plugins: (options.plugins || []).concat(fallbackClassTransform),
-				}).code;
+				check = transformSync(inputCode, addBabelPlugin(options, fallbackClassTransform)).code;
 			}
 
 			if (

@@ -2,7 +2,7 @@ import * as babel from '@babel/core';
 import { createFilter } from 'rollup-pluginutils';
 import createPreflightCheck from './preflightCheck.js';
 import helperPlugin from './helperPlugin.js';
-import { escapeRegExpCharacters, warnOnce } from './utils.js';
+import { addBabelPlugin, escapeRegExpCharacters, warnOnce } from './utils.js';
 import { RUNTIME, EXTERNAL, HELPERS } from './constants.js';
 
 const unpackOptions = ({
@@ -106,7 +106,7 @@ function createBabelPluginFactory(customCallback = returnObject) {
 					}
 
 					if (helpers !== RUNTIME) {
-						transformOptions = { ...transformOptions, plugins: transformOptions.plugins.concat(helperPlugin) };
+						transformOptions = addBabelPlugin(transformOptions, helperPlugin);
 					}
 
 					const result = babel.transformSync(code, transformOptions);
