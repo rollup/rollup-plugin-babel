@@ -56,7 +56,7 @@ describe('rollup-plugin-babel', function() {
 				Object.assign(
 					{
 						input,
-						plugins: [babelPlugin(babelOptions)],
+						plugins: [babelPlugin(Object.assign({ babelHelpers: 'bundled' }, babelOptions))],
 					},
 					rollupOptions,
 				),
@@ -117,7 +117,7 @@ describe('rollup-plugin-babel', function() {
 	it('works with proposal-decorators (#18)', () => {
 		return rollup.rollup({
 			input: 'samples/proposal-decorators/main.js',
-			plugins: [babelPlugin()],
+			plugins: [babelPlugin({ babelHelpers: 'bundled' })],
 		});
 	});
 
@@ -125,7 +125,7 @@ describe('rollup-plugin-babel', function() {
 		return rollup
 			.rollup({
 				input: 'samples/checks/main.js',
-				plugins: [babelPlugin()],
+				plugins: [babelPlugin({ babelHelpers: 'bundled' })],
 			})
 			.then(bundle => bundle.generate({ output: { format: 'esm' } }))
 			.then(({ output: [{ code }] }) => {
@@ -142,7 +142,7 @@ describe('rollup-plugin-babel', function() {
 		let warnCalled = false;
 		return bundle(
 			'samples/runtime-helpers/main.js',
-			{ runtimeHelpers: true },
+			{ babelHelpers: 'runtime' },
 			{},
 			{
 				onwarn: function(warning) {
@@ -158,19 +158,19 @@ describe('rollup-plugin-babel', function() {
 	});
 
 	it('allows transform-runtime to inject builtin version of helpers', () => {
-		return bundle('samples/runtime-helpers-esm/main.js', { runtimeHelpers: true }, {}, {}).then(({ code }) => {
+		return bundle('samples/runtime-helpers-esm/main.js', { babelHelpers: 'runtime' }, {}, {}).then(({ code }) => {
 			assert.ok(!~code.indexOf(HELPERS));
 		});
 	});
 
 	it('allows transform-runtime to inject esm version of helpers', () => {
-		return bundle('samples/runtime-helpers-esm/main.js', { runtimeHelpers: true }, {}, {}).then(({ code }) => {
+		return bundle('samples/runtime-helpers-esm/main.js', { babelHelpers: 'runtime' }, {}, {}).then(({ code }) => {
 			assert.ok(!~code.indexOf(HELPERS));
 		});
 	});
 
 	it('allows transform-runtime to be used instead of bundled helpers, but throws when CommonJS is used', () => {
-		return bundle('samples/runtime-helpers-commonjs/main.js', { runtimeHelpers: true })
+		return bundle('samples/runtime-helpers-commonjs/main.js', { babelHelpers: 'runtime' })
 			.then(() => {
 				assert.ok(false);
 			})
@@ -181,28 +181,10 @@ describe('rollup-plugin-babel', function() {
 			});
 	});
 
-	it('allows using external-helpers plugin in combination with externalHelpers flag', () => {
-		return bundle('samples/external-helpers/main.js', { externalHelpers: true }).then(({ code }) => {
-			assert.ok(code.indexOf('function _classCallCheck') === -1);
-			assert.ok(code.indexOf('babelHelpers.classCallCheck') !== -1);
+	it('allows using in combination with @babel/plugin-external-helpers', () => {
+		return bundle('samples/external-helpers-deprecated/main.js', { babelHelpers: 'external' }).then(({ code }) => {
+			assert.ok(~code.indexOf('babelHelpers.classCallCheck'));
 		});
-	});
-
-	it('warns about deprecated usage with external-helpers plugin (without externalHelpers flag)', () => {
-		/* eslint-disable no-console */
-		const messages = [];
-		const originalWarn = console.warn;
-		console.warn = msg => {
-			messages.push(msg);
-		};
-		return bundle('samples/external-helpers/main.js').then(() => {
-			console.warn = originalWarn;
-
-			assert.deepEqual(messages, [
-				'Using "external-helpers" plugin with rollup-plugin-babel is deprecated, as it now automatically deduplicates your Babel helpers.',
-			]);
-		});
-		/* eslint-enable no-console */
 	});
 
 	it('correctly renames helpers (#22)', () => {
@@ -214,7 +196,7 @@ describe('rollup-plugin-babel', function() {
 	it('runs preflight check correctly in absence of class transformer (#23)', () => {
 		return rollup.rollup({
 			input: 'samples/no-class-transformer/main.js',
-			plugins: [babelPlugin()],
+			plugins: [babelPlugin({ babelHelpers: 'bundled' })],
 		});
 	});
 
@@ -232,7 +214,7 @@ describe('rollup-plugin-babel', function() {
 
 	it('transpiles only files with default extensions', () => {
 		return bundle('samples/extensions-default/main.js', undefined, undefined, {
-			plugins: [babelPlugin(), jsonPlugin()],
+			plugins: [babelPlugin({ babelHelpers: 'bundled' }), jsonPlugin()],
 		}).then(({ code }) => {
 			assert.ok(code.indexOf('class Es ') === -1, 'should transpile .es');
 			assert.ok(code.indexOf('class Es6 ') === -1, 'should transpile .es6');
@@ -298,7 +280,7 @@ describe('rollup-plugin-babel', function() {
 			};
 		});
 		return rollup
-			.rollup({ input: 'samples/basic/main.js', plugins: [customBabelPlugin()] })
+			.rollup({ input: 'samples/basic/main.js', plugins: [customBabelPlugin({ babelHelpers: 'bundled' })] })
 			.then(bundle => {
 				return bundle.generate({ format: 'cjs' });
 			})
@@ -330,7 +312,10 @@ describe('rollup-plugin-babel', function() {
 			};
 		});
 		return rollup
-			.rollup({ input: 'samples/basic/main.js', plugins: [customBabelPlugin()] })
+			.rollup({
+				input: 'samples/basic/main.js',
+				plugins: [customBabelPlugin({ babelHelpers: 'bundled' })],
+			})
 			.then(bundle => {
 				return bundle.generate({ format: 'cjs' });
 			})
