@@ -158,13 +158,23 @@ describe('rollup-plugin-babel', function() {
 	});
 
 	it('allows transform-runtime to inject builtin version of helpers', () => {
-		return bundle('samples/runtime-helpers-esm/main.js', { babelHelpers: 'runtime' }, {}, {}).then(({ code }) => {
+		return bundle(
+			'samples/runtime-helpers-esm/main.js',
+			{ babelHelpers: 'runtime' },
+			{},
+			{ external: ['@babel/runtime/helpers/esm/classCallCheck'] },
+		).then(({ code }) => {
 			assert.ok(!~code.indexOf(HELPERS));
 		});
 	});
 
 	it('allows transform-runtime to inject esm version of helpers', () => {
-		return bundle('samples/runtime-helpers-esm/main.js', { babelHelpers: 'runtime' }, {}, {}).then(({ code }) => {
+		return bundle(
+			'samples/runtime-helpers-esm/main.js',
+			{ babelHelpers: 'runtime' },
+			{},
+			{ external: ['@babel/runtime/helpers/esm/classCallCheck'] },
+		).then(({ code }) => {
 			assert.ok(!~code.indexOf(HELPERS));
 		});
 	});
