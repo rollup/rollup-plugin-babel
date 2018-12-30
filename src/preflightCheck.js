@@ -1,5 +1,5 @@
 import { transformSync } from '@babel/core';
-import { INLINE, RUNTIME, EXTERNAL } from './constants.js';
+import { INLINE, RUNTIME, EXTERNAL, BUNDLED } from './constants.js';
 import { addBabelPlugin } from './utils.js';
 
 const MODULE_ERROR =
@@ -25,42 +25,46 @@ function fallbackClassTransform() {
 	};
 }
 
-export default function createPreflightCheck() {
-	let preflightCheckResults = {};
+const PREFLIGHT_INPUT = 'class Foo extends Bar {};\nexport default Foo;';
 
-	return (ctx, options) => {
-		const key = options.filename;
+const mismatchError = (actual, expected, filename) =>
+	`You have declared using "${expected}" babelHelpers, but transforming ${filename} resulted in "${actual}. Please check your configuration."`;
 
-		if (preflightCheckResults[key] === undefined) {
-			let helpers;
+export default function preflightCheck(ctx, babelHelpers, transformOptions) {
+	let check = transformSync(PREFLIGHT_INPUT, transformOptions).code;
 
-			const inputCode = 'class Foo extends Bar {};\nexport default Foo;';
-			const transformed = transformSync(inputCode, options);
+	if (~check.indexOf('class ')) {
+		check = transformSync(PREFLIGHT_INPUT, addBabelPlugin(transformOptions, fallbackClassTransform)).code;
+	}
 
-			let check = transformed.code;
+	if (
+		!~check.indexOf('export default') &&
+		!~check.indexOf('export default Foo') &&
+		!~check.indexOf('export { Foo as default }')
+	) {
+		ctx.error(MODULE_ERROR);
+	}
 
-			if (~check.indexOf('class ')) {
-				check = transformSync(inputCode, addBabelPlugin(options, fallbackClassTransform)).code;
-			}
-
-			if (
-				!~check.indexOf('export default') &&
-				!~check.indexOf('export default Foo') &&
-				!~check.indexOf('export { Foo as default }')
-			) {
-				ctx.error(MODULE_ERROR);
-			}
-
-			if (check.match(/\/helpers\/(esm\/)?inherits/)) helpers = RUNTIME;
-			else if (~check.indexOf('function _inherits')) helpers = INLINE;
-			else if (~check.indexOf('babelHelpers')) helpers = EXTERNAL;
-			else {
-				ctx.error(UNEXPECTED_ERROR);
-			}
-
-			preflightCheckResults[key] = helpers;
+	if (check.match(/\/helpers\/(esm\/)?inherits/)) {
+		if (babelHelpers === RUNTIME) {
+			return;
 		}
+		ctx.error(mismatchError(RUNTIME, babelHelpers, transformOptions.filename));
+	}
 
-		return preflightCheckResults[key];
-	};
+	if (~check.indexOf('babelHelpers.inherits')) {
+		if (babelHelpers === EXTERNAL) {
+			return;
+		}
+		ctx.error(mismatchError(EXTERNAL, babelHelpers, transformOptions.filename));
+	}
+
+	if (~check.indexOf('function _inherits')) {
+		if (babelHelpers === INLINE || babelHelpers === BUNDLED) {
+			return;
+		}
+		ctx.error(mismatchError(INLINE, babelHelpers, transformOptions.filename));
+	}
+
+	ctx.error(UNEXPECTED_ERROR);
 }
