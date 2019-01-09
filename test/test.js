@@ -256,6 +256,29 @@ describe('rollup-plugin-babel', function() {
 		});
 	});
 
+	it('throws when trying to add babel helper unavailable in used @babel/core version', () => {
+		return bundle('samples/basic/main.js', {
+			plugins: [
+				function() {
+					return {
+						visitor: {
+							Program(path, state) {
+								state.file.addHelper('__nonexistentHelper');
+							},
+						},
+					};
+				},
+			],
+		}).then(
+			() => {
+				assert.ok(false);
+			},
+			err => {
+				assert.equal(err.message, 'Unknown helper __nonexistentHelper');
+			},
+		);
+	});
+
 	it('supports customizing the loader', () => {
 		const customBabelPlugin = babelPlugin.custom(() => {
 			return {
@@ -275,10 +298,7 @@ describe('rollup-plugin-babel', function() {
 			};
 		});
 		return rollup
-			.rollup({
-				input: 'samples/basic/main.js',
-				plugins: [customBabelPlugin()],
-			})
+			.rollup({ input: 'samples/basic/main.js', plugins: [customBabelPlugin()] })
 			.then(bundle => {
 				return bundle.generate({ format: 'cjs' });
 			})
@@ -310,10 +330,7 @@ describe('rollup-plugin-babel', function() {
 			};
 		});
 		return rollup
-			.rollup({
-				input: 'samples/basic/main.js',
-				plugins: [customBabelPlugin()],
-			})
+			.rollup({ input: 'samples/basic/main.js', plugins: [customBabelPlugin()] })
 			.then(bundle => {
 				return bundle.generate({ format: 'cjs' });
 			})
