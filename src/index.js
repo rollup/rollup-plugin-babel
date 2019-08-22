@@ -93,28 +93,28 @@ function createBabelPluginFactory(customCallback = returnObject) {
 								code,
 								customOptions,
 						  }),
-				).then(transformOptions => {
-					if (!skipBabelHelpersCheck) {
-						preflightCheck(this, babelHelpers, transformOptions);
-					}
+				)
+					.then(transformOptions => {
+						if (!skipBabelHelpersCheck) {
+							preflightCheck(this, babelHelpers, transformOptions);
+						}
 
-					if (babelHelpers === BUNDLED) {
-						transformOptions = addBabelPlugin(transformOptions, bundledHelpersPlugin);
-					}
+						if (babelHelpers === BUNDLED) {
+							transformOptions = addBabelPlugin(transformOptions, bundledHelpersPlugin);
+						}
 
-					const result = babel.transformSync(code, transformOptions);
+						const result = babel.transformSync(code, transformOptions);
 
-					return Promise.resolve(
-						!overrides.result
+						return !overrides.result
 							? result
 							: overrides.result.call(this, result, {
 									code,
 									customOptions,
 									config,
 									transformOptions,
-							  }),
-					).then(({ code, map }) => ({ code, map }));
-				});
+							  });
+					})
+					.then(({ code, map }) => ({ code, map }));
 			},
 		};
 	};
