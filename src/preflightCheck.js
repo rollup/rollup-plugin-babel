@@ -25,10 +25,12 @@ function fallbackClassTransform() {
 	};
 }
 
-const PREFLIGHT_INPUT = 'class Foo extends Bar {};\nexport default Foo;';
+const PREFLIGHT_INPUT = 'class Foo extends Bar {}\nexport default Foo;';
 
 const mismatchError = (actual, expected, filename) =>
-	`You have declared using "${expected}" babelHelpers, but transforming ${filename} resulted in "${actual}. Please check your configuration."`;
+	`You have declared using "${expected}" babelHelpers, but transforming ${filename} resulted in "${actual}". Please check your configuration.`;
+
+const inheritsHelperRe = /\/helpers\/(esm\/)?inherits/;
 
 export default function preflightCheck(ctx, babelHelpers, transformOptions) {
 	let check = transformSync(PREFLIGHT_INPUT, transformOptions).code;
@@ -45,7 +47,7 @@ export default function preflightCheck(ctx, babelHelpers, transformOptions) {
 		ctx.error(MODULE_ERROR);
 	}
 
-	if (check.match(/\/helpers\/(esm\/)?inherits/)) {
+	if (inheritsHelperRe.test(check)) {
 		if (babelHelpers === RUNTIME) {
 			return;
 		}
