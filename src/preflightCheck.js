@@ -65,6 +65,11 @@ export default function preflightCheck(ctx, babelHelpers, transformOptions) {
 		if (babelHelpers === INLINE || babelHelpers === BUNDLED) {
 			return;
 		}
+		if (babelHelpers === RUNTIME && !transformOptions.plugins.length) {
+			ctx.error(
+				`You must use the \`@babel/plugin-transform-runtime\` plugin when \`babelHelpers\` is "${RUNTIME}", but you have configured no babel plugins.\n`,
+			);
+		}
 		ctx.error(mismatchError(INLINE, babelHelpers, transformOptions.filename));
 	}
 
