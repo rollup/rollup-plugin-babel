@@ -44,7 +44,7 @@
     "@babel/plugin-proposal-decorators": "^7.0.0",
     "@babel/plugin-transform-runtime": "^7.0.0",
     "@babel/preset-env": "^7.3.4",
-    "buble": "^0.19.3",
+    "@babel/register": "^7.5.5",
     "eslint": "^5.15.1",
     "eslint-config-prettier": "^3.3.0",
     "eslint-plugin-prettier": "^3.0.0",
