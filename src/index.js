@@ -23,6 +23,7 @@ const unpackOptions = ({
 		name: 'rollup-plugin-babel',
 		supportsStaticESM: true,
 		supportsDynamicImport: true,
+		supportsTopLevelAwait: true,
 		...rest.caller,
 	},
 });
