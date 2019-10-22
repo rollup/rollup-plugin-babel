@@ -91,37 +91,39 @@ function createBabelPluginFactory(customCallback = returnObject) {
 								code,
 								customOptions,
 						  }),
-				).then(transformOptions => {
-					const helpers = preflightCheck(this, transformOptions);
+				)
+					.then(transformOptions => {
+						const helpers = preflightCheck(this, transformOptions);
 
-					if (helpers === EXTERNAL && !externalHelpers) {
-						warnOnce(
-							this,
-							'Using "external-helpers" plugin with rollup-plugin-babel is deprecated, as it now automatically deduplicates your Babel helpers.',
+						if (helpers === EXTERNAL && !externalHelpers) {
+							warnOnce(
+								this,
+								'Using "external-helpers" plugin with rollup-plugin-babel is deprecated, as it now automatically deduplicates your Babel helpers.',
+							);
+						} else if (helpers === RUNTIME && !runtimeHelpers) {
+							this.error(
+								'Runtime helpers are not enabled. Either exclude the transform-runtime Babel plugin or pass the `runtimeHelpers: true` option. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information',
+							);
+						}
+
+						if (helpers !== RUNTIME && !externalHelpers) {
+							transformOptions = addBabelPlugin(transformOptions, helperPlugin);
+						}
+
+						const resultP = babel.transformAsync(code, transformOptions);
+
+						if (!overrides.result) return resultP;
+
+						return resultP.then(result =>
+							overrides.result.call(this, result, {
+								code,
+								customOptions,
+								config,
+								transformOptions,
+							}),
 						);
-					} else if (helpers === RUNTIME && !runtimeHelpers) {
-						this.error(
-							'Runtime helpers are not enabled. Either exclude the transform-runtime Babel plugin or pass the `runtimeHelpers: true` option. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information',
-						);
-					}
-
-					if (helpers !== RUNTIME && !externalHelpers) {
-						transformOptions = addBabelPlugin(transformOptions, helperPlugin);
-					}
-
-					const result = babel.transformSync(code, transformOptions);
-
-					return Promise.resolve(
-						!overrides.result
-							? result
-							: overrides.result.call(this, result, {
-									code,
-									customOptions,
-									config,
-									transformOptions,
-							  }),
-					).then(({ code, map }) => ({ code, map }));
-				});
+					})
+					.then(({ code, map }) => ({ code, map }));
 			},
 		};
 	};
