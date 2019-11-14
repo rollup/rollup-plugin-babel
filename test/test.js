@@ -274,7 +274,10 @@ describe('rollup-plugin-babel', function() {
 				assert.ok(false);
 			},
 			err => {
-				assert.equal(err.message, 'Unknown helper __nonexistentHelper');
+				assert.equal(
+					err.message,
+					`${path.resolve(__dirname, 'samples', 'basic', 'main.js')}: Unknown helper __nonexistentHelper`,
+				);
 			},
 		);
 	});
