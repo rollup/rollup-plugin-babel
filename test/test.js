@@ -512,7 +512,7 @@ module.exports = main;
 		it('allows transform-runtime to be used instead of bundled helpers for CJS output', () => {
 			return bundleWithOutputPlugin('samples/runtime-helpers/main.js', {
 				presets: [['@babel/env', { modules: 'cjs' }]],
-				plugins: ['@babel/external-helpers', '@babel/transform-runtime'],
+				plugins: ['@babel/transform-runtime'],
 				runtimeHelpers: true,
 			}).then(({ code }) => {
 				assert.strictEqual(
@@ -538,7 +538,7 @@ module.exports = Foo;
 				'samples/runtime-helpers/main.js',
 				{
 					presets: [['@babel/env']],
-					plugins: ['@babel/external-helpers', '@babel/transform-runtime'],
+					plugins: ['@babel/transform-runtime'],
 					runtimeHelpers: true,
 				},
 				{ format: 'esm' },
@@ -628,6 +628,40 @@ module.exports = main;
 					'The "include", "exclude" and "extensions" options are ignored when using the "transformGenerated" option.',
 				]);
 			});
+		});
+
+		it('transforms all chunks in a code-splitting setup', () => {
+			return rollup
+				.rollup({ input: 'samples/chunks/main.js' })
+				.then(bundle => {
+					return bundle.generate({
+						format: 'esm',
+						plugins: [
+							babelPlugin({
+								transformGenerated: true,
+								plugins: ['@babel/syntax-dynamic-import'],
+								presets: ['@babel/env'],
+							}),
+						],
+					});
+				})
+				.then(({ output }) => {
+					assert.deepStrictEqual(
+						output.map(({ code }) => code),
+						[
+							`import('./dep-5f996703.js').then(function (result) {
+  return console.log(result);
+});
+`,
+							`var dep = function dep() {
+  return 42;
+};
+
+export default dep;
+`,
+						],
+					);
+				});
 		});
 	});
 });

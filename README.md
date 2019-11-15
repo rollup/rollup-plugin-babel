@@ -36,7 +36,7 @@ import { rollup } from 'rollup';
 import babel from 'rollup-plugin-babel';
 
 rollup({
-  entry: 'main.js',
+  input: 'main.js',
   plugins: [
     babel({
       exclude: 'node_modules/**'
@@ -51,6 +51,7 @@ All options are as per the [Babel documentation](https://babeljs.io/), plus the 
 - `options.include` and `options.exclude`: each a minimatch pattern, or array of minimatch patterns, which determine which files are transpiled by Babel (by default, all files are transpiled)
 - `options.externalHelpersWhitelist`: an array which gives explicit control over which babelHelper functions are allowed in the bundle (by default, every helper is allowed)
 - `options.extensions`: an array of file extensions that Babel should transpile (by default the Babel defaults of .js, .jsx, .es6, .es, .mjs. are used)
+- `options.transformGenerated`: a boolean value indicating whether to run Babel on the generated files instead of the input files; even though this is slower, it is the only way to transpile Rollup's auto-generated wrapper code to lower compatibility targets than ES5 (or most likely ES6 when Rollup 2 will be released), see [Running Babel on the generated code](#running-babel-on-the-generated-code) for details
 
 Babel will respect `.babelrc` files – this is generally the best place to put your configuration.
 
@@ -110,6 +111,109 @@ plugins: [
 		presets: [['env', { modules: false }]],
 	}),
 ];
+```
+
+## Running Babel on the generated code
+
+By setting `options.transformGenerated: true`, you can configure rollup-plugin-babel to run Babel on the output files instead of the input files. This can be used to perform code transformations on the resulting chunks and is the only way to transform Rollup's auto-generated code. By default, the plugin will be applied to all outputs:
+
+```js
+// rollup.config.js
+import babel from 'rollup-plugin-babel';
+export default {
+	input: 'main.js',
+	plugins: [babel({ transformGenerated: true })],
+	output: [
+		{ file: 'bundle.cjs.js', format: 'cjs' },
+		{ file: 'bundle.esm.js', format: 'esm' },
+	],
+};
+```
+
+If you only want to apply it to specific outputs, you can use it as an output plugin:
+
+```js
+// rollup.config.js
+import babel from 'rollup-plugin-babel';
+export default {
+	input: 'main.js',
+	output: [
+		{ file: 'bundle.js', format: 'esm' },
+		{
+			file: 'bundle.min.js',
+			format: 'esm',
+			plugins: [babel({ transformGenerated: true })],
+		},
+	],
+};
+```
+
+The `include`, `exclude` and `extensions` options are ignored when the `transformGenerated` option is used and will produce warnings, and there are a few more points to note that users should be aware of.
+
+### Finding .babelrc files
+
+Depending on what options are used, this plugin will start looking for `.babelrc` files starting in the directory of the file indicated by `output.file` or in the directory indicated by `output.dir`. If neither of these options is used, e.g. when rendering to stdout or when using the JavaScript API, then `.babelrc` files are ignored and options need to be passed in manually.
+
+### Injected helpers
+
+By default, helpers e.g. when transpiling classes will be inserted at the top of each chunk. In contrast to when applying this plugin on the input files, helpers will not be deduplicated across chunks.
+
+You can however use external helpers by adding the `@babel/external-helpers` plugin, which will look for helpers on a global variable named `babelHelpers`:
+
+```js
+rollup.rollup({...})
+.then(bundle => bundle.generate({
+  format: 'esm',
+  plugins: [babel({
+    transformGenerated: true,
+    presets: ['@babel/env'],
+    plugins: ['@babel/external-helpers']
+  })]
+}))
+```
+
+```js
+// input
+export default class Foo {}
+
+// output
+var Foo = function Foo() {
+	babelHelpers.classCallCheck(this, Foo);
+};
+
+export default Foo;
+```
+
+Alternatively, you can use imported runtime helpers by adding the `@babel/transform-runtime` plugin. Note that to produce valid code e.g. with `@babel/env`, it is very recommended to configure the format of modules for that plugin to match the output format used by Rollup:
+
+```js
+rollup.rollup({...})
+.then(bundle => bundle.generate({
+  format: 'cjs',
+  plugins: [babel({
+    transformGenerated: true,
+    presets: [['@babel/env', { modules: 'cjs' }]],
+    plugins: ['@babel/transform-runtime']
+  })]
+}))
+```
+
+```js
+// input
+export default class Foo {}
+
+// output
+('use strict');
+
+var _interopRequireDefault = require('@babel/runtime/helpers/interopRequireDefault');
+
+var _classCallCheck2 = _interopRequireDefault(require('@babel/runtime/helpers/classCallCheck'));
+
+var Foo = function Foo() {
+	(0, _classCallCheck2['default'])(this, Foo);
+};
+
+module.exports = Foo;
 ```
 
 ## Configuring Babel 6
