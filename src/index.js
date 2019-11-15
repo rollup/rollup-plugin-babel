@@ -53,13 +53,70 @@ function createBabelPluginFactory(customCallback = returnObject) {
 			externalHelpersWhitelist,
 			include,
 			runtimeHelpers,
+			transformGenerated,
 			...babelOptions
 		} = unpackOptions(pluginOptions);
 
+		if (transformGenerated) {
+			const preflightCheck = createPreflightCheck(false);
+
+			return {
+				name: 'babel-output',
+
+				renderStart() {
+					if (include || exclude || extensions) {
+						warnOnce(
+							this,
+							'The "include", "exclude" and "extensions" options are ignored when using the "transformGenerated" option.',
+						);
+					}
+				},
+
+				renderChunk(code, chunk, options) {
+					const filename = options.file || (options.dir && `${options.dir}/placeholder.js`);
+					const config = babel.loadPartialConfig({ ...babelOptions, filename });
+
+					if (!config) {
+						return Promise.resolve(null);
+					}
+
+					return Promise.resolve(
+						!overrides.config
+							? config.options
+							: overrides.config.call(this, config, {
+									code,
+									customOptions,
+							  }),
+					).then(transformOptions => {
+						const helpers = preflightCheck(this, transformOptions);
+
+						if (helpers === RUNTIME && !runtimeHelpers) {
+							this.error(
+								'Runtime helpers are not enabled. Either exclude the transform-runtime Babel plugin or pass the `runtimeHelpers: true` option. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information',
+							);
+						}
+
+						const result = babel.transformSync(code, transformOptions);
+
+						return Promise.resolve(
+							!overrides.result
+								? result
+								: overrides.result.call(this, result, {
+										code,
+										customOptions,
+										config,
+										transformOptions,
+								  }),
+						).then(({ code, map }) => ({ code, map }));
+					});
+				},
+			};
+		}
+
+		const preflightCheck = createPreflightCheck(true);
 		const extensionRegExp = new RegExp(`(${extensions.map(escapeRegExpCharacters).join('|')})$`);
 		const includeExcludeFilter = createFilter(include, exclude);
 		const filter = id => extensionRegExp.test(id) && includeExcludeFilter(id);
-		const preflightCheck = createPreflightCheck();
 
 		return {
 			name: 'babel',
@@ -71,6 +128,7 @@ function createBabelPluginFactory(customCallback = returnObject) {
 					return;
 				}
 
+				// TODO Lukas check and implement
 				return babel.buildExternalHelpers(externalHelpersWhitelist, 'module');
 			},
 			transform(code, filename) {

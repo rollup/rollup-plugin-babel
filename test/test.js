@@ -5,9 +5,6 @@ var SourceMapConsumer = require('source-map').SourceMapConsumer;
 var jsonPlugin = require('rollup-plugin-json');
 var babelPlugin = require('..');
 
-// from ./src/constants
-var HELPERS = '\0rollupPluginBabelHelpers.js';
-
 require('source-map-support').install();
 
 process.chdir(__dirname);
@@ -70,6 +67,14 @@ describe('rollup-plugin-babel', function() {
 	it('runs code through babel', () => {
 		return bundle('samples/basic/main.js').then(({ code }) => {
 			assert.ok(code.indexOf('const') === -1, code);
+			assert.strictEqual(
+				code,
+				`'use strict';
+
+var answer = 42;
+console.log("the answer is ".concat(answer));
+`,
+			);
 		});
 	});
 
@@ -85,16 +90,19 @@ describe('rollup-plugin-babel', function() {
 		});
 	});
 
-	it('does not add helpers unnecessarily', () => {
-		return bundle('samples/basic/main.js').then(({ code }) => {
-			assert.ok(code.indexOf(HELPERS) === -1, code);
-		});
-	});
-
 	it('does not babelify excluded code', () => {
 		return bundle('samples/exclusions/main.js', { exclude: '**/foo.js' }).then(({ code }) => {
 			assert.ok(code.indexOf('${foo()}') === -1, code);
 			assert.ok(code.indexOf('=> 42') !== -1, code);
+			assert.strictEqual(
+				code,
+				`'use strict';
+
+const foo = () => 42;
+
+console.log("the answer is ".concat(foo()));
+`,
+			);
 		});
 	});
 
@@ -139,33 +147,101 @@ describe('rollup-plugin-babel', function() {
 	});
 
 	it('allows transform-runtime to be used instead of bundled helpers', () => {
-		let warnCalled = false;
+		const warnings = [];
 		return bundle(
 			'samples/runtime-helpers/main.js',
 			{ runtimeHelpers: true },
 			{},
 			{
-				onwarn: function(warning) {
-					assert.equal(warning.code, 'UNRESOLVED_IMPORT');
-					assert.equal(warning.source, '@babel/runtime/helpers/classCallCheck');
-					warnCalled = true;
+				onwarn(warning) {
+					warnings.push(warning.message);
 				},
 			},
 		).then(({ code }) => {
-			assert.ok(warnCalled, 'onwarn was never triggered about unresolved imports');
-			assert.ok(!~code.indexOf(HELPERS));
+			assert.deepStrictEqual(warnings, [
+				"'@babel/runtime/helpers/classCallCheck' is imported by samples/runtime-helpers/main.js, but could not be resolved – treating it as an external dependency",
+			]);
+			assert.strictEqual(
+				code,
+				`'use strict';
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var _classCallCheck = _interopDefault(require('@babel/runtime/helpers/classCallCheck'));
+
+var Foo = function Foo() {
+  _classCallCheck(this, Foo);
+};
+
+module.exports = Foo;
+`,
+			);
 		});
 	});
 
 	it('allows transform-runtime to inject builtin version of helpers', () => {
-		return bundle('samples/runtime-helpers-esm/main.js', { runtimeHelpers: true }, {}, {}).then(({ code }) => {
-			assert.ok(!~code.indexOf(HELPERS));
+		const warnings = [];
+		return bundle(
+			'samples/runtime-helpers-esm/main.js',
+			{ runtimeHelpers: true },
+			{},
+			{
+				onwarn(warning) {
+					warnings.push(warning.message);
+				},
+			},
+		).then(({ code }) => {
+			assert.deepStrictEqual(warnings, [
+				"'@babel/runtime/helpers/esm/classCallCheck' is imported by samples/runtime-helpers-esm/main.js, but could not be resolved – treating it as an external dependency",
+			]);
+			assert.strictEqual(
+				code,
+				`'use strict';
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var _classCallCheck = _interopDefault(require('@babel/runtime/helpers/esm/classCallCheck'));
+
+var Foo = function Foo() {
+  _classCallCheck(this, Foo);
+};
+
+module.exports = Foo;
+`,
+			);
 		});
 	});
 
 	it('allows transform-runtime to inject esm version of helpers', () => {
-		return bundle('samples/runtime-helpers-esm/main.js', { runtimeHelpers: true }, {}, {}).then(({ code }) => {
-			assert.ok(!~code.indexOf(HELPERS));
+		const warnings = [];
+		return bundle(
+			'samples/runtime-helpers-esm/main.js',
+			{ runtimeHelpers: true },
+			{},
+			{
+				onwarn(warning) {
+					warnings.push(warning.message);
+				},
+			},
+		).then(({ code }) => {
+			assert.deepStrictEqual(warnings, [
+				"'@babel/runtime/helpers/esm/classCallCheck' is imported by samples/runtime-helpers-esm/main.js, but could not be resolved – treating it as an external dependency",
+			]);
+			assert.strictEqual(
+				code,
+				`'use strict';
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var _classCallCheck = _interopDefault(require('@babel/runtime/helpers/esm/classCallCheck'));
+
+var Foo = function Foo() {
+  _classCallCheck(this, Foo);
+};
+
+module.exports = Foo;
+`,
+			);
 		});
 	});
 
@@ -185,11 +261,27 @@ describe('rollup-plugin-babel', function() {
 		return bundle('samples/external-helpers/main.js', { externalHelpers: true }).then(({ code }) => {
 			assert.ok(code.indexOf('function _classCallCheck') === -1);
 			assert.ok(code.indexOf('babelHelpers.classCallCheck') !== -1);
+			assert.strictEqual(
+				code,
+				`'use strict';
+
+var Foo = function Foo() {
+  babelHelpers.classCallCheck(this, Foo);
+};
+
+var Bar = function Bar() {
+  babelHelpers.classCallCheck(this, Bar);
+};
+
+var main = [new Foo(), new Bar()];
+
+module.exports = main;
+`,
+			);
 		});
 	});
 
 	it('warns about deprecated usage with external-helpers plugin (without externalHelpers flag)', () => {
-		/* eslint-disable no-console */
 		const messages = [];
 		const originalWarn = console.warn;
 		console.warn = msg => {
@@ -202,7 +294,6 @@ describe('rollup-plugin-babel', function() {
 				'Using "external-helpers" plugin with rollup-plugin-babel is deprecated, as it now automatically deduplicates your Babel helpers.',
 			]);
 		});
-		/* eslint-enable no-console */
 	});
 
 	it('correctly renames helpers (#22)', () => {
@@ -348,6 +439,195 @@ describe('rollup-plugin-babel', function() {
 			plugins: [[replaceConsoleLogProperty, { replace: 'foobaz' }]],
 		}).then(({ code }) => {
 			assert.ok(code.indexOf('console.foobaz') !== -1);
+		});
+	});
+
+	it('can be used as an input plugin while transforming the output', () => {
+		return bundle('samples/basic/main.js', {
+			presets: ['@babel/env'],
+			transformGenerated: true,
+		}).then(({ code }) => {
+			assert.ok(code.indexOf('const') === -1, code);
+		});
+	});
+
+	describe('when used as an output plugin', () => {
+		function bundleWithOutputPlugin(input, babelOptions = {}, generateOptions = {}, rollupOptions = {}) {
+			return rollup
+				.rollup(Object.assign({ input }, rollupOptions))
+				.then(bundle => {
+					return bundle.generate(
+						Object.assign(
+							{
+								format: 'cjs',
+								plugins: [babelPlugin(Object.assign({ transformGenerated: true }, babelOptions))],
+							},
+							generateOptions,
+						),
+					);
+				})
+				.then(({ output: [generated] }) => generated);
+		}
+
+		it('allows running the plugin on the output via output options', () => {
+			return bundleWithOutputPlugin('samples/basic/main.js', {
+				presets: ['@babel/env'],
+			}).then(({ code }) => {
+				assert.ok(code.indexOf('const') === -1, code);
+			});
+		});
+
+		it('ignores .babelrc when transforming the output by default', () => {
+			return bundleWithOutputPlugin('samples/basic/main.js').then(({ code }) => {
+				assert.ok(code.indexOf('const') !== -1, code);
+			});
+		});
+
+		it('respects a .babelrc file next to the target when the "file" option is used', () => {
+			return bundle(
+				'samples/babelrc/main.js',
+				{},
+				{
+					file: 'samples/babelrc/bundle.js',
+				},
+			).then(({ code }) => {
+				assert.ok(code.indexOf('const') !== -1, code);
+				assert.ok(code.indexOf('Math.pow') !== -1, code);
+			});
+		});
+
+		it('respects a .babelrc file in the same directory when the "dir" option is used', () => {
+			return bundle(
+				'samples/babelrc/main.js',
+				{},
+				{
+					dir: 'samples/babelrc',
+				},
+			).then(({ code }) => {
+				assert.ok(code.indexOf('const') !== -1, code);
+				assert.ok(code.indexOf('Math.pow') !== -1, code);
+			});
+		});
+
+		it('allows transform-runtime to be used instead of bundled helpers for CJS output', () => {
+			return bundleWithOutputPlugin('samples/runtime-helpers/main.js', {
+				presets: [['@babel/env', { modules: 'cjs' }]],
+				plugins: ['@babel/external-helpers', '@babel/transform-runtime'],
+				runtimeHelpers: true,
+			}).then(({ code }) => {
+				assert.strictEqual(
+					code,
+					`'use strict';
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
+
+var Foo = function Foo() {
+  (0, _classCallCheck2["default"])(this, Foo);
+};
+
+module.exports = Foo;
+`,
+				);
+			});
+		});
+
+		it('allows transform-runtime to be used instead of bundled helpers for ESM output', () => {
+			return bundleWithOutputPlugin(
+				'samples/runtime-helpers/main.js',
+				{
+					presets: [['@babel/env']],
+					plugins: ['@babel/external-helpers', '@babel/transform-runtime'],
+					runtimeHelpers: true,
+				},
+				{ format: 'esm' },
+			).then(({ code }) => {
+				assert.strictEqual(
+					code,
+					`import _classCallCheck from "@babel/runtime/helpers/classCallCheck";
+
+var Foo = function Foo() {
+  _classCallCheck(this, Foo);
+};
+
+export default Foo;
+`,
+				);
+			});
+		});
+
+		it('generates sourcemap by default', () => {
+			return bundleWithOutputPlugin('samples/class/main.js', {}, { sourcemap: true }).then(({ code, map }) => {
+				const target = 'log';
+				const smc = new SourceMapConsumer(map);
+				const loc = getLocation(code, code.indexOf(target));
+				const original = smc.originalPositionFor(loc);
+
+				assert.deepEqual(original, {
+					source: 'samples/class/main.js'.split(path.sep).join('/'),
+					line: 3,
+					column: 10,
+					name: target,
+				});
+			});
+		});
+
+		it('allows using external-helpers plugin even if the externalHelpers flag is not passed', () => {
+			const warnings = [];
+			return bundleWithOutputPlugin(
+				'samples/external-helpers/main.js',
+				{
+					presets: ['@babel/env'],
+					plugins: ['@babel/external-helpers'],
+				},
+				{},
+				{
+					onwarn(warning) {
+						warnings.push(warning.message);
+					},
+				},
+			).then(({ code }) => {
+				assert.deepStrictEqual(warnings, []);
+				assert.ok(code.indexOf('function _classCallCheck') === -1);
+				assert.ok(code.indexOf('babelHelpers.classCallCheck') !== -1);
+				assert.strictEqual(
+					code,
+					`'use strict';
+
+var Foo = function Foo() {
+  babelHelpers.classCallCheck(this, Foo);
+};
+
+var Bar = function Bar() {
+  babelHelpers.classCallCheck(this, Bar);
+};
+
+var main = [new Foo(), new Bar()];
+module.exports = main;
+`,
+				);
+			});
+		});
+
+		it('warns when using the "include" option', () => {
+			const warnings = [];
+			return bundleWithOutputPlugin(
+				'samples/basic/main.js',
+				{
+					include: ['*.js'],
+				},
+				{},
+				{
+					onwarn(warning) {
+						warnings.push(warning.message);
+					},
+				},
+			).then(() => {
+				assert.deepStrictEqual(warnings, [
+					'The "include", "exclude" and "extensions" options are ignored when using the "transformGenerated" option.',
+				]);
+			});
 		});
 	});
 });

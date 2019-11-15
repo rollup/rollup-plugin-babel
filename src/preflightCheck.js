@@ -25,7 +25,7 @@ function fallbackClassTransform() {
 	};
 }
 
-export default function createPreflightCheck() {
+export default function createPreflightCheck(validateModuleFormat) {
 	let preflightCheckResults = {};
 
 	return (ctx, options) => {
@@ -44,6 +44,7 @@ export default function createPreflightCheck() {
 			}
 
 			if (
+				validateModuleFormat &&
 				!~check.indexOf('export default') &&
 				!~check.indexOf('export default Foo') &&
 				!~check.indexOf('export { Foo as default }')
