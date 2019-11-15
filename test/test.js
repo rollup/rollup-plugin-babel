@@ -159,7 +159,7 @@ console.log("the answer is ".concat(foo()));
 			},
 		).then(({ code }) => {
 			assert.deepStrictEqual(warnings, [
-				"'@babel/runtime/helpers/classCallCheck' is imported by samples/runtime-helpers/main.js, but could not be resolved – treating it as an external dependency",
+				`'@babel/runtime/helpers/classCallCheck' is imported by samples${path.sep}runtime-helpers${path.sep}main.js, but could not be resolved – treating it as an external dependency`,
 			]);
 			assert.strictEqual(
 				code,
@@ -192,7 +192,7 @@ module.exports = Foo;
 			},
 		).then(({ code }) => {
 			assert.deepStrictEqual(warnings, [
-				"'@babel/runtime/helpers/esm/classCallCheck' is imported by samples/runtime-helpers-esm/main.js, but could not be resolved – treating it as an external dependency",
+				`'@babel/runtime/helpers/esm/classCallCheck' is imported by samples${path.sep}runtime-helpers-esm${path.sep}main.js, but could not be resolved – treating it as an external dependency`,
 			]);
 			assert.strictEqual(
 				code,
@@ -225,7 +225,7 @@ module.exports = Foo;
 			},
 		).then(({ code }) => {
 			assert.deepStrictEqual(warnings, [
-				"'@babel/runtime/helpers/esm/classCallCheck' is imported by samples/runtime-helpers-esm/main.js, but could not be resolved – treating it as an external dependency",
+				`'@babel/runtime/helpers/esm/classCallCheck' is imported by samples${path.sep}runtime-helpers-esm${path.sep}main.js, but could not be resolved – treating it as an external dependency`,
 			]);
 			assert.strictEqual(
 				code,
