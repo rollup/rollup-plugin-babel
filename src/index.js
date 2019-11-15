@@ -1,9 +1,10 @@
 import * as babel from '@babel/core';
 import { createFilter } from 'rollup-pluginutils';
-import createPreflightCheck from './preflightCheck.js';
+import { EXTERNAL, HELPERS, RUNTIME } from './constants.js';
 import helperPlugin from './helperPlugin.js';
+import createPreflightCheck from './preflightCheck.js';
+import transformCode from './transformCode';
 import { addBabelPlugin, escapeRegExpCharacters, warnOnce } from './utils.js';
-import { RUNTIME, EXTERNAL, HELPERS } from './constants.js';
 
 const unpackOptions = ({
 	extensions = babel.DEFAULT_EXTENSIONS,
@@ -58,13 +59,11 @@ function createBabelPluginFactory(customCallback = returnObject) {
 		} = unpackOptions(pluginOptions);
 
 		if (transformGenerated) {
-			const preflightCheck = createPreflightCheck(false);
-
 			return {
 				name: 'babel-output',
 
 				renderStart() {
-					if (include || exclude || extensions) {
+					if (pluginOptions.include || pluginOptions.exclude || pluginOptions.extensions) {
 						warnOnce(
 							this,
 							'The "include", "exclude" and "extensions" options are ignored when using the "transformGenerated" option.',
@@ -73,42 +72,12 @@ function createBabelPluginFactory(customCallback = returnObject) {
 				},
 
 				renderChunk(code, chunk, options) {
-					const filename = options.file || (options.dir && `${options.dir}/placeholder.js`);
-					const config = babel.loadPartialConfig({ ...babelOptions, filename });
-
-					if (!config) {
-						return Promise.resolve(null);
-					}
-
-					return Promise.resolve(
-						!overrides.config
-							? config.options
-							: overrides.config.call(this, config, {
-									code,
-									customOptions,
-							  }),
-					).then(transformOptions => {
-						const helpers = preflightCheck(this, transformOptions);
-
-						if (helpers === RUNTIME && !runtimeHelpers) {
-							this.error(
-								'Runtime helpers are not enabled. Either exclude the transform-runtime Babel plugin or pass the `runtimeHelpers: true` option. See https://github.com/rollup/rollup-plugin-babel#configuring-babel for more information',
-							);
-						}
-
-						const result = babel.transformSync(code, transformOptions);
-
-						return Promise.resolve(
-							!overrides.result
-								? result
-								: overrides.result.call(this, result, {
-										code,
-										customOptions,
-										config,
-										transformOptions,
-								  }),
-						).then(({ code, map }) => ({ code, map }));
-					});
+					return transformCode(
+						code,
+						{ ...babelOptions, filename: options.file || (options.dir && `${options.dir}/placeholder.js`) },
+						overrides,
+						customOptions,
+					);
 				},
 			};
 		}
@@ -120,36 +89,20 @@ function createBabelPluginFactory(customCallback = returnObject) {
 
 		return {
 			name: 'babel',
+
 			resolveId(id) {
 				if (id === HELPERS) return id;
 			},
-			load(id) {
-				if (id !== HELPERS) {
-					return;
-				}
 
-				// TODO Lukas check and implement
-				return babel.buildExternalHelpers(externalHelpersWhitelist, 'module');
+			load(id) {
+				if (id === HELPERS) return babel.buildExternalHelpers(externalHelpersWhitelist, 'module');
 			},
+
 			transform(code, filename) {
 				if (!filter(filename)) return Promise.resolve(null);
 				if (filename === HELPERS) return Promise.resolve(null);
 
-				const config = babel.loadPartialConfig({ ...babelOptions, filename });
-
-				// file is ignored
-				if (!config) {
-					return Promise.resolve(null);
-				}
-
-				return Promise.resolve(
-					!overrides.config
-						? config.options
-						: overrides.config.call(this, config, {
-								code,
-								customOptions,
-						  }),
-				).then(transformOptions => {
+				return transformCode(code, { ...babelOptions, filename }, overrides, customOptions, transformOptions => {
 					const helpers = preflightCheck(this, transformOptions);
 
 					if (helpers === EXTERNAL && !externalHelpers) {
@@ -164,21 +117,9 @@ function createBabelPluginFactory(customCallback = returnObject) {
 					}
 
 					if (helpers !== RUNTIME && !externalHelpers) {
-						transformOptions = addBabelPlugin(transformOptions, helperPlugin);
+						return addBabelPlugin(transformOptions, helperPlugin);
 					}
-
-					const result = babel.transformSync(code, transformOptions);
-
-					return Promise.resolve(
-						!overrides.result
-							? result
-							: overrides.result.call(this, result, {
-									code,
-									customOptions,
-									config,
-									transformOptions,
-							  }),
-					).then(({ code, map }) => ({ code, map }));
+					return transformOptions;
 				});
 			},
 		};
