@@ -77,6 +77,7 @@ function createBabelPluginFactory(customCallback = returnObject) {
 						{ ...babelOptions, filename: options.file || (options.dir && `${options.dir}/placeholder.js`) },
 						overrides,
 						customOptions,
+						this,
 					);
 				},
 			};
@@ -102,7 +103,7 @@ function createBabelPluginFactory(customCallback = returnObject) {
 				if (!filter(filename)) return Promise.resolve(null);
 				if (filename === HELPERS) return Promise.resolve(null);
 
-				return transformCode(code, { ...babelOptions, filename }, overrides, customOptions, transformOptions => {
+				return transformCode(code, { ...babelOptions, filename }, overrides, customOptions, this, transformOptions => {
 					const helpers = preflightCheck(this, transformOptions);
 
 					if (helpers === EXTERNAL && !externalHelpers) {

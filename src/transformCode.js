@@ -1,6 +1,6 @@
 import * as babel from '@babel/core';
 
-export default function(code, babelOptions, overrides, customOptions, finalizeOptions) {
+export default function(code, babelOptions, overrides, customOptions, ctx, finalizeOptions) {
 	const config = babel.loadPartialConfig(babelOptions);
 
 	if (!config) {
@@ -23,7 +23,7 @@ export default function(code, babelOptions, overrides, customOptions, finalizeOp
 		return Promise.resolve(
 			!overrides.result
 				? result
-				: overrides.result.call(this, result, {
+				: overrides.result.call(ctx, result, {
 						code,
 						customOptions,
 						config,
