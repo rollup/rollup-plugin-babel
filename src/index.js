@@ -60,7 +60,7 @@ function createBabelPluginFactory(customCallback = returnObject) {
 
 		if (transformGenerated) {
 			return {
-				name: 'babel-output',
+				name: 'babel',
 
 				renderStart() {
 					if (pluginOptions.include || pluginOptions.exclude || pluginOptions.extensions) {
@@ -74,7 +74,7 @@ function createBabelPluginFactory(customCallback = returnObject) {
 				renderChunk(code, chunk, options) {
 					return transformCode(
 						code,
-						{ ...babelOptions, filename: options.file || (options.dir && `${options.dir}/placeholder.js`) },
+						{ ...babelOptions, filename: options.file || (options.dir && `${options.dir}/_.js`) },
 						overrides,
 						customOptions,
 						this,

@@ -44,7 +44,7 @@ function replaceConsoleLogProperty() {
 	};
 }
 
-describe('rollup-plugin-babel', function() {
+describe('rollup-plugin-babel when used as an input plugin', function() {
 	this.timeout(15000);
 
 	function bundle(input, babelOptions = {}, generateOptions = {}, rollupOptions = {}) {
@@ -168,39 +168,6 @@ console.log("the answer is ".concat(foo()));
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var _classCallCheck = _interopDefault(require('@babel/runtime/helpers/classCallCheck'));
-
-var Foo = function Foo() {
-  _classCallCheck(this, Foo);
-};
-
-module.exports = Foo;
-`,
-			);
-		});
-	});
-
-	it('allows transform-runtime to inject builtin version of helpers', () => {
-		const warnings = [];
-		return bundle(
-			'samples/runtime-helpers-esm/main.js',
-			{ runtimeHelpers: true },
-			{},
-			{
-				onwarn(warning) {
-					warnings.push(warning.message);
-				},
-			},
-		).then(({ code }) => {
-			assert.deepStrictEqual(warnings, [
-				`'@babel/runtime/helpers/esm/classCallCheck' is imported by samples${path.sep}runtime-helpers-esm${path.sep}main.js, but could not be resolved – treating it as an external dependency`,
-			]);
-			assert.strictEqual(
-				code,
-				`'use strict';
-
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var _classCallCheck = _interopDefault(require('@babel/runtime/helpers/esm/classCallCheck'));
 
 var Foo = function Foo() {
   _classCallCheck(this, Foo);
@@ -450,74 +417,77 @@ module.exports = main;
 			assert.ok(code.indexOf('const') === -1, code);
 		});
 	});
+});
 
-	describe('when used as an output plugin', () => {
-		function bundleWithOutputPlugin(input, babelOptions = {}, generateOptions = {}, rollupOptions = {}) {
-			return rollup
-				.rollup(Object.assign({ input }, rollupOptions))
-				.then(bundle => {
-					return bundle.generate(
-						Object.assign(
-							{
-								format: 'cjs',
-								plugins: [babelPlugin(Object.assign({ transformGenerated: true }, babelOptions))],
-							},
-							generateOptions,
-						),
-					);
-				})
-				.then(({ output: [generated] }) => generated);
-		}
+describe('rollup-plugin-babel when used as an output plugin', function() {
+	this.timeout(15000);
 
-		it('allows running the plugin on the output via output options', () => {
-			return bundleWithOutputPlugin('samples/basic/main.js', {
-				presets: ['@babel/env'],
-			}).then(({ code }) => {
-				assert.ok(code.indexOf('const') === -1, code);
-			});
+	function bundleWithOutputPlugin(input, babelOptions = {}, generateOptions = {}, rollupOptions = {}) {
+		return rollup
+			.rollup(Object.assign({ input }, rollupOptions))
+			.then(bundle => {
+				return bundle.generate(
+					Object.assign(
+						{
+							format: 'cjs',
+							plugins: [babelPlugin(Object.assign({ transformGenerated: true }, babelOptions))],
+						},
+						generateOptions,
+					),
+				);
+			})
+			.then(({ output: [generated] }) => generated);
+	}
+
+	it('allows running the plugin on the output via output options', () => {
+		return bundleWithOutputPlugin('samples/basic/main.js', {
+			presets: ['@babel/env'],
+		}).then(({ code }) => {
+			assert.ok(code.indexOf('const') === -1, code);
 		});
+	});
 
-		it('ignores .babelrc when transforming the output by default', () => {
-			return bundleWithOutputPlugin('samples/basic/main.js').then(({ code }) => {
-				assert.ok(code.indexOf('const') !== -1, code);
-			});
+	it('ignores .babelrc when transforming the output by default', () => {
+		return bundleWithOutputPlugin('samples/basic/main.js').then(({ code }) => {
+			assert.ok(code.indexOf('const') !== -1, code);
 		});
+	});
 
-		it('respects a .babelrc file next to the target when the "file" option is used', () => {
-			return bundle(
-				'samples/babelrc/main.js',
-				{},
-				{
-					file: 'samples/babelrc/bundle.js',
-				},
-			).then(({ code }) => {
-				assert.ok(code.indexOf('const') !== -1, code);
-				assert.ok(code.indexOf('Math.pow') !== -1, code);
-			});
+	it('respects a .babelrc file next to the target when the "file" option is used', () => {
+		return bundleWithOutputPlugin(
+			'samples/babelrc/main.js',
+			{},
+			{
+				file: 'samples/babelrc/bundle.js',
+			},
+		).then(({ code }) => {
+			assert.ok(code.indexOf('const') !== -1, code);
+			assert.ok(code.indexOf('Math.pow') !== -1, code);
 		});
+	});
 
-		it('respects a .babelrc file in the same directory when the "dir" option is used', () => {
-			return bundle(
-				'samples/babelrc/main.js',
-				{},
-				{
-					dir: 'samples/babelrc',
-				},
-			).then(({ code }) => {
-				assert.ok(code.indexOf('const') !== -1, code);
-				assert.ok(code.indexOf('Math.pow') !== -1, code);
-			});
+	it('respects a .babelrc file in the same directory when the "dir" option is used', () => {
+		return bundleWithOutputPlugin(
+			'samples/babelrc/main.js',
+			{},
+			{
+				dir: 'samples/babelrc',
+			},
+		).then(({ code }) => {
+			assert.ok(code.indexOf('const') !== -1, code);
+			assert.ok(code.indexOf('Math.pow') !== -1, code);
 		});
+	});
 
-		it('allows transform-runtime to be used instead of bundled helpers for CJS output', () => {
-			return bundleWithOutputPlugin('samples/runtime-helpers/main.js', {
-				presets: [['@babel/env', { modules: 'cjs' }]],
-				plugins: ['@babel/transform-runtime'],
-				runtimeHelpers: true,
-			}).then(({ code }) => {
-				assert.strictEqual(
-					code,
-					`'use strict';
+	it('allows transform-runtime to be used instead of bundled helpers for CJS output', () => {
+		return bundleWithOutputPlugin('samples/runtime-helpers/main.js', {
+			presets: [['@babel/env', { modules: 'cjs' }]],
+			plugins: ['@babel/transform-runtime'],
+			runtimeHelpers: true,
+		}).then(({ code }) => {
+			assert.strictEqual(
+				code,
+				`'use strict';
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
@@ -529,23 +499,23 @@ var Foo = function Foo() {
 
 module.exports = Foo;
 `,
-				);
-			});
+			);
 		});
+	});
 
-		it('allows transform-runtime to be used instead of bundled helpers for ESM output', () => {
-			return bundleWithOutputPlugin(
-				'samples/runtime-helpers/main.js',
-				{
-					presets: [['@babel/env']],
-					plugins: ['@babel/transform-runtime'],
-					runtimeHelpers: true,
-				},
-				{ format: 'esm' },
-			).then(({ code }) => {
-				assert.strictEqual(
-					code,
-					`import _classCallCheck from "@babel/runtime/helpers/classCallCheck";
+	it('allows transform-runtime to be used instead of bundled helpers for ESM output', () => {
+		return bundleWithOutputPlugin(
+			'samples/runtime-helpers/main.js',
+			{
+				presets: [['@babel/env']],
+				plugins: ['@babel/transform-runtime'],
+				runtimeHelpers: true,
+			},
+			{ format: 'esm' },
+		).then(({ code }) => {
+			assert.strictEqual(
+				code,
+				`import _classCallCheck from "@babel/runtime/helpers/classCallCheck";
 
 var Foo = function Foo() {
   _classCallCheck(this, Foo);
@@ -553,47 +523,47 @@ var Foo = function Foo() {
 
 export default Foo;
 `,
-				);
+			);
+		});
+	});
+
+	it('generates sourcemap by default', () => {
+		return bundleWithOutputPlugin('samples/class/main.js', {}, { sourcemap: true }).then(({ code, map }) => {
+			const target = 'log';
+			const smc = new SourceMapConsumer(map);
+			const loc = getLocation(code, code.indexOf(target));
+			const original = smc.originalPositionFor(loc);
+
+			assert.deepEqual(original, {
+				source: 'samples/class/main.js'.split(path.sep).join('/'),
+				line: 3,
+				column: 10,
+				name: target,
 			});
 		});
+	});
 
-		it('generates sourcemap by default', () => {
-			return bundleWithOutputPlugin('samples/class/main.js', {}, { sourcemap: true }).then(({ code, map }) => {
-				const target = 'log';
-				const smc = new SourceMapConsumer(map);
-				const loc = getLocation(code, code.indexOf(target));
-				const original = smc.originalPositionFor(loc);
-
-				assert.deepEqual(original, {
-					source: 'samples/class/main.js'.split(path.sep).join('/'),
-					line: 3,
-					column: 10,
-					name: target,
-				});
-			});
-		});
-
-		it('allows using external-helpers plugin even if the externalHelpers flag is not passed', () => {
-			const warnings = [];
-			return bundleWithOutputPlugin(
-				'samples/external-helpers/main.js',
-				{
-					presets: ['@babel/env'],
-					plugins: ['@babel/external-helpers'],
+	it('allows using external-helpers plugin even if the externalHelpers flag is not passed', () => {
+		const warnings = [];
+		return bundleWithOutputPlugin(
+			'samples/external-helpers/main.js',
+			{
+				presets: ['@babel/env'],
+				plugins: ['@babel/external-helpers'],
+			},
+			{},
+			{
+				onwarn(warning) {
+					warnings.push(warning.message);
 				},
-				{},
-				{
-					onwarn(warning) {
-						warnings.push(warning.message);
-					},
-				},
-			).then(({ code }) => {
-				assert.deepStrictEqual(warnings, []);
-				assert.ok(code.indexOf('function _classCallCheck') === -1);
-				assert.ok(code.indexOf('babelHelpers.classCallCheck') !== -1);
-				assert.strictEqual(
-					code,
-					`'use strict';
+			},
+		).then(({ code }) => {
+			assert.deepStrictEqual(warnings, []);
+			assert.ok(code.indexOf('function _classCallCheck') === -1);
+			assert.ok(code.indexOf('babelHelpers.classCallCheck') !== -1);
+			assert.strictEqual(
+				code,
+				`'use strict';
 
 var Foo = function Foo() {
   babelHelpers.classCallCheck(this, Foo);
@@ -606,62 +576,97 @@ var Bar = function Bar() {
 var main = [new Foo(), new Bar()];
 module.exports = main;
 `,
-				);
-			});
+			);
 		});
+	});
 
-		it('warns when using the "include" option', () => {
-			const warnings = [];
-			return bundleWithOutputPlugin(
-				'samples/basic/main.js',
-				{
-					include: ['*.js'],
+	it('warns when using the "include" option', () => {
+		const warnings = [];
+		return bundleWithOutputPlugin(
+			'samples/basic/main.js',
+			{
+				include: ['*.js'],
+			},
+			{},
+			{
+				onwarn(warning) {
+					warnings.push(warning.message);
 				},
-				{},
-				{
-					onwarn(warning) {
-						warnings.push(warning.message);
-					},
-				},
-			).then(() => {
-				assert.deepStrictEqual(warnings, [
-					'The "include", "exclude" and "extensions" options are ignored when using the "transformGenerated" option.',
-				]);
-			});
+			},
+		).then(() => {
+			assert.deepStrictEqual(warnings, [
+				'The "include", "exclude" and "extensions" options are ignored when using the "transformGenerated" option.',
+			]);
 		});
+	});
 
-		it('transforms all chunks in a code-splitting setup', () => {
-			return rollup
-				.rollup({ input: 'samples/chunks/main.js' })
-				.then(bundle => {
-					return bundle.generate({
-						format: 'esm',
-						plugins: [
-							babelPlugin({
-								transformGenerated: true,
-								plugins: ['@babel/syntax-dynamic-import'],
-								presets: ['@babel/env'],
-							}),
-						],
-					});
-				})
-				.then(({ output }) => {
-					assert.deepStrictEqual(
-						output.map(({ code }) => code),
-						[
-							`import('./dep-5f996703.js').then(function (result) {
+	it('transforms all chunks in a code-splitting setup', () => {
+		return rollup
+			.rollup({ input: 'samples/chunks/main.js' })
+			.then(bundle =>
+				bundle.generate({
+					format: 'esm',
+					plugins: [
+						babelPlugin({
+							transformGenerated: true,
+							plugins: ['@babel/syntax-dynamic-import'],
+							presets: ['@babel/env'],
+						}),
+					],
+				}),
+			)
+			.then(({ output }) => {
+				assert.deepStrictEqual(
+					output.map(({ code }) => code),
+					[
+						`import('./dep-5f996703.js').then(function (result) {
   return console.log(result);
 });
 `,
-							`var dep = function dep() {
+						`var dep = function dep() {
   return 42;
 };
 
 export default dep;
 `,
-						],
-					);
-				});
-		});
+					],
+				);
+			});
+	});
+
+	it('transforms all chunks when preserving modules', () => {
+		return rollup
+			.rollup({
+				input: 'samples/preserve-modules/main.js',
+				preserveModules: true,
+			})
+			.then(bundle =>
+				bundle.generate({
+					format: 'esm',
+					plugins: [
+						babelPlugin({
+							transformGenerated: true,
+							presets: ['@babel/env'],
+						}),
+					],
+				}),
+			)
+			.then(({ output }) => {
+				assert.deepStrictEqual(
+					output.map(({ code }) => code),
+					[
+						`import getResult from './dep.js';
+var value = 42;
+console.log(getResult(value));
+`,
+						`var getResult = function getResult(value) {
+  return value + 1;
+};
+
+export default getResult;
+`,
+					],
+				);
+			});
 	});
 });
