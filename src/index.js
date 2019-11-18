@@ -71,14 +71,8 @@ function createBabelPluginFactory(customCallback = returnObject) {
 					}
 				},
 
-				renderChunk(code, chunk, options) {
-					return transformCode(
-						code,
-						{ ...babelOptions, filename: options.file || (options.dir && `${options.dir}/_.js`) },
-						overrides,
-						customOptions,
-						this,
-					);
+				renderChunk(code) {
+					return transformCode(code, babelOptions, overrides, customOptions, this);
 				},
 			};
 		}

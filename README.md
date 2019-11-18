@@ -168,9 +168,9 @@ export default {
 };
 ```
 
-### Finding Babel configuration
+### Finding Babel configuration options
 
-Depending on what options are used, this plugin will start looking for [Babel configuration files](https://babeljs.io/docs/en/config-files) starting in the directory of the output file indicated by `output.file` or in the directory indicated by `output.dir`. If neither of these options is used, e.g. when rendering to stdout or when using the JavaScript API, then config files will be ignored and you need to pass Babel options to the plugin manually.
+Besides Babel options that are passed directly to this plugin, this plugin will only respect project-wide [Babel configuration files](https://babeljs.io/docs/en/config-files) based on the current working directory when using the `transformGenerated` option.
 
 ### Plugins that modify imports and exports
 

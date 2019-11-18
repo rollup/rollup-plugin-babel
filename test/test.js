@@ -453,32 +453,6 @@ describe('rollup-plugin-babel when used as an output plugin', function() {
 		});
 	});
 
-	it('respects a .babelrc file next to the target when the "file" option is used', () => {
-		return bundleWithOutputPlugin(
-			'samples/babelrc/main.js',
-			{},
-			{
-				file: 'samples/babelrc/bundle.js',
-			},
-		).then(({ code }) => {
-			assert.ok(code.indexOf('const') !== -1, code);
-			assert.ok(code.indexOf('Math.pow') !== -1, code);
-		});
-	});
-
-	it('respects a .babelrc file in the same directory when the "dir" option is used', () => {
-		return bundleWithOutputPlugin(
-			'samples/babelrc/main.js',
-			{},
-			{
-				dir: 'samples/babelrc',
-			},
-		).then(({ code }) => {
-			assert.ok(code.indexOf('const') !== -1, code);
-			assert.ok(code.indexOf('Math.pow') !== -1, code);
-		});
-	});
-
 	it('allows transform-runtime to be used instead of bundled helpers for CJS output', () => {
 		return bundleWithOutputPlugin('samples/runtime-helpers/main.js', {
 			presets: [['@babel/env', { modules: 'cjs' }]],
