@@ -649,21 +649,35 @@ export default getResult;
 			});
 	});
 
-	it('warns when using a Rollup output format other than esm or cjs', () => {
-		const warnings = [];
+	it('throws when using a Rollup output format other than esm or cjs', () => {
+		return bundleWithOutputPlugin('samples/basic/main.js', {}, { format: 'iife' })
+			.then(() => {
+				throw new Error('Rollup did not throw');
+			})
+			.catch(error => {
+				assert.strictEqual(
+					error.message,
+					`Using Babel on the generated chunks is strongly discouraged for formats other than "esm" or "cjs" as it can easily break wrapper code and lead to accidentally created global variables. Instead, you should set "output.format" to "esm" and use Babel to transform to another format, e.g. by adding "presets: [['@babel/env', { modules: 'umd' }]]" to your Babel options. If you still want to proceed, add "allowAllFormats: true" to your plugin options.`,
+				);
+			});
+	});
+
+	it('allows using a Rollup output format other than esm or cjs with allowAllFormats', () => {
 		return bundleWithOutputPlugin(
 			'samples/basic/main.js',
-			{},
+			{ presets: ['@babel/env'], allowAllFormats: true },
 			{ format: 'iife' },
-			{
-				onwarn(warning) {
-					warnings.push(warning.message);
-				},
-			},
-		).then(() => {
-			assert.deepStrictEqual(warnings, [
-				`Using Babel on the generated chunks is strongly discouraged for formats other than "esm" or "cjs" as it can easily break wrapper code and lead to accidentally created global variables. Instead, you should set "output.format" to "esm" and use Babel to transform to another format, e.g. by adding "presets: [['@babel/env', { modules: 'umd' }]]" to your Babel options.`,
-			]);
+		).then(({ code }) => {
+			assert.strictEqual(
+				code,
+				`(function () {
+  'use strict';
+
+  var answer = 42;
+  console.log("the answer is ".concat(answer));
+})();
+`,
+			);
 		});
 	});
 

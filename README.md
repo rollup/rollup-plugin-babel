@@ -116,7 +116,7 @@ plugins: [
 
 ## Running Babel on the generated code
 
-You can run rollup-plugin-babel on the output files instead of the input files by using `babel.generated`. This can be used to perform code transformations on the resulting chunks and is the only way to transform Rollup's auto-generated code. By default, the plugin will be applied to all outputs:
+You can run rollup-plugin-babel on the output files instead of the input files by using `babel.generated(...)`. This can be used to perform code transformations on the resulting chunks and is the only way to transform Rollup's auto-generated code. By default, the plugin will be applied to all outputs:
 
 ```js
 // rollup.config.js
@@ -175,13 +175,23 @@ Besides Babel options that are passed directly to this plugin, this plugin will 
 
 ### Using formats other than ES modules or CommonJS
 
-As `babel.generated()` will run _after_ Rollup has done all its transformations, it needs to make sure it preserves the semantics of Rollup's output format. This is especially important for Babel plugins that add, modify or remove imports or exports, but also for other transformations that add new variables as they can accidentally become global variables depending on the format. Therefore it is recommended that for formats other than `esm` or `cjs`, you set Rollup to `esm` output format and let Babel handle the transformation to another format, e.g. via
+As `babel.generated(...)` will run _after_ Rollup has done all its transformations, it needs to make sure it preserves the semantics of Rollup's output format. This is especially important for Babel plugins that add, modify or remove imports or exports, but also for other transformations that add new variables as they can accidentally become global variables depending on the format. Therefore it is recommended that for formats other than `esm` or `cjs`, you set Rollup to use the `esm` output format and let Babel handle the transformation to another format, e.g. via
 
 ```
 presets: [['@babel/env', { modules: 'umd' }], ...]
 ```
 
-to create a UMD/IIFE compatible output.
+to create a UMD/IIFE compatible output. If you want to use `babel.generated(...)` with other formats, you need to specify `allowAllFormats: true` as plugin option:
+
+```js
+rollup.rollup({...})
+.then(bundle => bundle.generate({
+  format: 'iife',
+  plugins: [babel.generated({
+    allowAllFormats: true
+  })]
+}))
+```
 
 ### Injected helpers
 
