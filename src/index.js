@@ -28,24 +28,29 @@ const unpackOptions = ({
 	},
 });
 
+function getOptionsWithOverrides(pluginOptions = {}, overrides = {}) {
+	if (!overrides.options) return { customOptions: null, pluginOptionsWithOverrides: pluginOptions };
+	const overridden = overrides.options(pluginOptions);
+
+	if (typeof overridden.then === 'function') {
+		throw new Error(
+			".options hook can't be asynchronous. It should return `{ customOptions, pluginsOptions }` synchronously.",
+		);
+	}
+
+	return {
+		customOptions: overridden.customOptions || null,
+		pluginOptionsWithOverrides: overridden.pluginOptions || pluginOptions,
+	};
+}
+
 const returnObject = () => ({});
 
-function createBabelPluginFactory(customCallback = returnObject) {
+function createBabelInputPluginFactory(customCallback = returnObject) {
 	const overrides = customCallback(babel);
 
 	return pluginOptions => {
-		let customOptions = null;
-
-		if (overrides.options) {
-			const overridden = overrides.options(pluginOptions);
-
-			if (typeof overridden.then === 'function') {
-				throw new Error(
-					".options hook can't be asynchronous. It should return `{ customOptions, pluginsOptions }` synchronously.",
-				);
-			}
-			({ customOptions = null, pluginOptions } = overridden);
-		}
+		const { customOptions, pluginOptionsWithOverrides } = getOptionsWithOverrides(pluginOptions, overrides);
 
 		const {
 			exclude,
@@ -54,28 +59,8 @@ function createBabelPluginFactory(customCallback = returnObject) {
 			externalHelpersWhitelist,
 			include,
 			runtimeHelpers,
-			transformGenerated,
 			...babelOptions
-		} = unpackOptions(pluginOptions);
-
-		if (transformGenerated) {
-			return {
-				name: 'babel',
-
-				renderStart() {
-					if (pluginOptions.include || pluginOptions.exclude || pluginOptions.extensions) {
-						warnOnce(
-							this,
-							'The "include", "exclude" and "extensions" options are ignored when using the "transformGenerated" option.',
-						);
-					}
-				},
-
-				renderChunk(code) {
-					return transformCode(code, babelOptions, overrides, customOptions, this);
-				},
-			};
-		}
+		} = unpackOptions(pluginOptionsWithOverrides);
 
 		const preflightCheck = createPreflightCheck(true);
 		const extensionRegExp = new RegExp(`(${extensions.map(escapeRegExpCharacters).join('|')})$`);
@@ -121,7 +106,42 @@ function createBabelPluginFactory(customCallback = returnObject) {
 	};
 }
 
-const babelPluginFactory = createBabelPluginFactory();
-babelPluginFactory.custom = createBabelPluginFactory;
+function createBabelOutputPluginFactory(customCallback = returnObject) {
+	const overrides = customCallback(babel);
+
+	return pluginOptions => {
+		const { customOptions, pluginOptionsWithOverrides } = getOptionsWithOverrides(pluginOptions, overrides);
+		/* eslint-disable no-unused-vars */
+		const {
+			exclude,
+			extensions,
+			externalHelpers,
+			externalHelpersWhitelist,
+			include,
+			runtimeHelpers,
+			...babelOptions
+		} = unpackOptions(pluginOptionsWithOverrides);
+		/* eslint-enable no-unused-vars */
+
+		return {
+			name: 'babel',
+
+			renderStart() {
+				if (pluginOptionsWithOverrides.extensions || include || exclude) {
+					warnOnce(this, 'The "include", "exclude" and "extensions" options are ignored when transforming the output.');
+				}
+			},
+
+			renderChunk(code) {
+				return transformCode(code, babelOptions, overrides, customOptions, this);
+			},
+		};
+	};
+}
+
+const babelPluginFactory = createBabelInputPluginFactory();
+babelPluginFactory.custom = createBabelInputPluginFactory;
+babelPluginFactory.generated = createBabelOutputPluginFactory();
+babelPluginFactory.generated.custom = createBabelOutputPluginFactory;
 
 export default babelPluginFactory;
