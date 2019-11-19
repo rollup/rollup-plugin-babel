@@ -106,6 +106,20 @@ function createBabelInputPluginFactory(customCallback = returnObject) {
 	};
 }
 
+function getRecommendedFormat(rollupFormat) {
+	switch (rollupFormat) {
+		case 'amd':
+			return 'amd';
+		case 'iife':
+		case 'umd':
+			return 'umd';
+		case 'system':
+			return 'systemjs';
+		default:
+			return '<module format>';
+	}
+}
+
 function createBabelOutputPluginFactory(customCallback = returnObject) {
 	const overrides = customCallback(babel);
 
@@ -126,9 +140,16 @@ function createBabelOutputPluginFactory(customCallback = returnObject) {
 		return {
 			name: 'babel',
 
-			renderStart() {
+			renderStart(outputOptions) {
 				if (pluginOptionsWithOverrides.extensions || include || exclude) {
 					warnOnce(this, 'The "include", "exclude" and "extensions" options are ignored when transforming the output.');
+				}
+				if (outputOptions.format !== 'es' && outputOptions.format !== 'cjs') {
+					this.warn(
+						`Using Babel on the generated chunks is strongly discouraged for formats other than "esm" or "cjs" as it can easily break wrapper code and lead to accidentally created global variables. Instead, you should set "output.format" to "esm" and use Babel to transform to another format, e.g. by adding "presets: [['@babel/env', { modules: '${getRecommendedFormat(
+							outputOptions.format,
+						)}' }]]" to your Babel options.`,
+					);
 				}
 			},
 
