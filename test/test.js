@@ -481,6 +481,33 @@ exports["default"] = _default;
 		});
 	});
 
+	it("allows transform-runtime to be used with `useESModules: false` (the default) and `format: 'cjs'`", () => {
+		return bundleWithOutputPlugin(
+			'samples/runtime-helpers/main.js',
+			{
+				presets: ['@babel/env'],
+				plugins: [['@babel/transform-runtime', { useESModules: false }]],
+			},
+			{ format: 'cjs' },
+		).then(({ code }) => {
+			assert.strictEqual(
+				code,
+				`'use strict';
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
+
+var Foo = function Foo() {
+  (0, _classCallCheck2["default"])(this, Foo);
+};
+
+module.exports = Foo;
+`,
+			);
+		});
+	});
+
 	it('generates sourcemap by default', () => {
 		return bundleWithOutputPlugin('samples/class/main.js', {}, { sourcemap: true }).then(({ code, map }) => {
 			const target = 'log';
@@ -668,7 +695,9 @@ export default getResult;
 		).then(({ code }) => {
 			assert.strictEqual(
 				code,
-				`(function () {
+				`"use strict";
+
+(function () {
   'use strict';
 
   var answer = 42;

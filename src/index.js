@@ -22,11 +22,28 @@ const unpackOptions = ({
 	...rest,
 	caller: {
 		name: 'rollup-plugin-babel',
-		supportsStaticESM: true,
-		supportsDynamicImport: true,
 		...rest.caller,
 	},
 });
+
+const unpackInputPluginOptions = options =>
+	unpackOptions({
+		...options,
+		caller: {
+			supportsStaticESM: true,
+			supportsDynamicImport: true,
+			...options.caller,
+		},
+	});
+
+const unpackOutputPluginOptions = (options, { format }) =>
+	unpackOptions({
+		...options,
+		caller: {
+			supportsStaticESM: format === 'es',
+			...options.caller,
+		},
+	});
 
 function getOptionsWithOverrides(pluginOptions = {}, overrides = {}) {
 	if (!overrides.options) return { customOptions: null, pluginOptionsWithOverrides: pluginOptions };
@@ -60,7 +77,7 @@ function createBabelInputPluginFactory(customCallback = returnObject) {
 			include,
 			runtimeHelpers,
 			...babelOptions
-		} = unpackOptions(pluginOptionsWithOverrides);
+		} = unpackInputPluginOptions(pluginOptionsWithOverrides);
 
 		const preflightCheck = createPreflightCheck(true);
 		const extensionRegExp = new RegExp(`(${extensions.map(escapeRegExpCharacters).join('|')})$`);
@@ -125,24 +142,14 @@ function createBabelOutputPluginFactory(customCallback = returnObject) {
 
 	return pluginOptions => {
 		const { customOptions, pluginOptionsWithOverrides } = getOptionsWithOverrides(pluginOptions, overrides);
-		/* eslint-disable no-unused-vars */
-		const {
-			allowAllFormats,
-			exclude,
-			extensions,
-			externalHelpers,
-			externalHelpersWhitelist,
-			include,
-			runtimeHelpers,
-			...babelOptions
-		} = unpackOptions(pluginOptionsWithOverrides);
-		/* eslint-enable no-unused-vars */
 
 		return {
 			name: 'babel',
 
 			renderStart(outputOptions) {
-				if (pluginOptionsWithOverrides.extensions || include || exclude) {
+				const { extensions, include, exclude, allowAllFormats } = pluginOptionsWithOverrides;
+
+				if (extensions || include || exclude) {
 					warnOnce(this, 'The "include", "exclude" and "extensions" options are ignored when transforming the output.');
 				}
 				if (!allowAllFormats && outputOptions.format !== 'es' && outputOptions.format !== 'cjs') {
@@ -154,7 +161,20 @@ function createBabelOutputPluginFactory(customCallback = returnObject) {
 				}
 			},
 
-			renderChunk(code) {
+			renderChunk(code, chunk, outputOptions) {
+				/* eslint-disable no-unused-vars */
+				const {
+					allowAllFormats,
+					exclude,
+					extensions,
+					externalHelpers,
+					externalHelpersWhitelist,
+					include,
+					runtimeHelpers,
+					...babelOptions
+				} = unpackOutputPluginOptions(pluginOptionsWithOverrides, outputOptions);
+				/* eslint-enable no-unused-vars */
+
 				return transformCode(code, babelOptions, overrides, customOptions, this);
 			},
 		};
