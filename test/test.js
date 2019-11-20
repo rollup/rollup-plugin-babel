@@ -182,7 +182,9 @@ module.exports = Foo;
 		return bundle(
 			'samples/runtime-helpers-esm/main.js',
 			{ runtimeHelpers: true },
-			{},
+			{
+				format: 'esm',
+			},
 			{
 				onwarn(warning) {
 					warnings.push(warning.message);
@@ -194,17 +196,13 @@ module.exports = Foo;
 			]);
 			assert.strictEqual(
 				code,
-				`'use strict';
-
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var _classCallCheck = _interopDefault(require('@babel/runtime/helpers/esm/classCallCheck'));
+				`import _classCallCheck from '@babel/runtime/helpers/esm/classCallCheck';
 
 var Foo = function Foo() {
   _classCallCheck(this, Foo);
 };
 
-module.exports = Foo;
+export default Foo;
 `,
 			);
 		});
