@@ -43,6 +43,7 @@ const unpackOutputPluginOptions = (options, { format }) =>
 			supportsStaticESM: format === 'es',
 			...options.caller,
 		},
+		sourceType: format === 'es' ? 'module' : 'script',
 	});
 
 function getOptionsWithOverrides(pluginOptions = {}, overrides = {}) {

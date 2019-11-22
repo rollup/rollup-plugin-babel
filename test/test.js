@@ -494,12 +494,10 @@ exports["default"] = _default;
 				code,
 				`'use strict';
 
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
-
-var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
+var _classCallCheck = require("@babel/runtime/helpers/classCallCheck");
 
 var Foo = function Foo() {
-  (0, _classCallCheck2["default"])(this, Foo);
+  _classCallCheck(this, Foo);
 };
 
 module.exports = Foo;
@@ -695,9 +693,7 @@ export default getResult;
 		).then(({ code }) => {
 			assert.strictEqual(
 				code,
-				`"use strict";
-
-(function () {
+				`(function () {
   'use strict';
 
   var answer = 42;
