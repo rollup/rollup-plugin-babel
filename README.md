@@ -171,7 +171,7 @@ export default {
 
 ### Finding Babel configuration options
 
-Besides Babel options that are passed directly to this plugin, `babel-generated(...)` will only respect project-wide [Babel configuration files](https://babeljs.io/docs/en/config-files) based on the current working directory when applying it to the generated code.
+Besides Babel options that are passed directly to this plugin, `babel-generated(...)` will only respect project-wide [Babel configuration files](https://babeljs.io/docs/en/config-files) based on the current working directory when applying it to the generated code. `.babelrc` files will be ignored as they would only apply to files in the same directory or sub-directories, which does not really make sense for generated chunks.
 
 ### Using formats other than ES modules or CommonJS
 
