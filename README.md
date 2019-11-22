@@ -199,15 +199,42 @@ By default, helpers e.g. when transpiling classes will be inserted at the top of
 
 Alternatively, you can use imported runtime helpers by adding the `@babel/transform-runtime` plugin. This will make `@babel/runtime` an external dependency of your project, see [@babel/plugin-transform-runtime](https://babeljs.io/docs/en/babel-plugin-transform-runtime) for details.
 
-Note that as this is adding imports to your files, you should configure Rollup's format to `esm` and let Babel handle the transformation to another format:
+Note that this will only work for `esm` and `cjs` formats, and you need to make sure to set the `useESModules` option of `@babel/plugin-transform-runtime` to `true` if you create ESM output:
 
 ```js
 rollup.rollup({...})
 .then(bundle => bundle.generate({
   format: 'esm',
   plugins: [babel.generated({
-    presets: [['@babel/env', { modules: 'cjs' }]],
-    plugins: ['@babel/transform-runtime']
+    presets: ['@babel/env'],
+    plugins: [['@babel/transform-runtime', { useESModules: true }]]
+  })]
+}))
+```
+
+```js
+// input
+export default class Foo {}
+
+// output
+import _classCallCheck from '@babel/runtime/helpers/esm/classCallCheck';
+
+var Foo = function Foo() {
+	_classCallCheck(this, Foo);
+};
+
+export default Foo;
+```
+
+And for CommonJS:
+
+```js
+rollup.rollup({...})
+.then(bundle => bundle.generate({
+  format: 'cjs',
+  plugins: [babel.generated({
+    presets: ['@babel/env'],
+    plugins: [['@babel/transform-runtime', { useESModules: false }]]
   })]
 }))
 ```
@@ -219,12 +246,10 @@ export default class Foo {}
 // output
 ('use strict');
 
-var _interopRequireDefault = require('@babel/runtime/helpers/interopRequireDefault');
-
-var _classCallCheck2 = _interopRequireDefault(require('@babel/runtime/helpers/classCallCheck'));
+var _classCallCheck = require('@babel/runtime/helpers/classCallCheck');
 
 var Foo = function Foo() {
-	(0, _classCallCheck2['default'])(this, Foo);
+	_classCallCheck(this, Foo);
 };
 
 module.exports = Foo;

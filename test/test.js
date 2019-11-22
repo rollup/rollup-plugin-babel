@@ -448,39 +448,6 @@ describe('rollup-plugin-babel when used as an output plugin', function() {
 		});
 	});
 
-	it('allows transform-runtime to be used instead of bundled helpers', () => {
-		return bundleWithOutputPlugin(
-			'samples/runtime-helpers/main.js',
-			{
-				presets: [['@babel/env', { modules: 'cjs' }]],
-				plugins: ['@babel/transform-runtime'],
-			},
-			{ format: 'esm' },
-		).then(({ code }) => {
-			assert.strictEqual(
-				code,
-				`"use strict";
-
-var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports["default"] = void 0;
-
-var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
-
-var Foo = function Foo() {
-  (0, _classCallCheck2["default"])(this, Foo);
-};
-
-var _default = Foo;
-exports["default"] = _default;
-`,
-			);
-		});
-	});
-
 	it("allows transform-runtime to be used with `useESModules: false` (the default) and `format: 'cjs'`", () => {
 		return bundleWithOutputPlugin(
 			'samples/runtime-helpers/main.js',
@@ -501,6 +468,29 @@ var Foo = function Foo() {
 };
 
 module.exports = Foo;
+`,
+			);
+		});
+	});
+
+	it("allows transform-runtime to be used with `useESModules: true` and `format: 'esm'`", () => {
+		return bundleWithOutputPlugin(
+			'samples/runtime-helpers/main.js',
+			{
+				presets: ['@babel/env'],
+				plugins: [['@babel/transform-runtime', { useESModules: true }]],
+			},
+			{ format: 'esm' },
+		).then(({ code }) => {
+			assert.strictEqual(
+				code,
+				`import _classCallCheck from "@babel/runtime/helpers/esm/classCallCheck";
+
+var Foo = function Foo() {
+  _classCallCheck(this, Foo);
+};
+
+export default Foo;
 `,
 			);
 		});
