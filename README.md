@@ -197,32 +197,9 @@ rollup.rollup({...})
 
 By default, helpers e.g. when transpiling classes will be inserted at the top of each chunk. In contrast to when applying this plugin on the input files, helpers will not be deduplicated across chunks.
 
-You can however use external helpers by adding the `@babel/external-helpers` plugin, which will look for helpers on a global variable named `babelHelpers`:
+Alternatively, you can use imported runtime helpers by adding the `@babel/transform-runtime` plugin. This will make `@babel/runtime` an external dependency of your project, see [@babel/plugin-transform-runtime](https://babeljs.io/docs/en/babel-plugin-transform-runtime) for details.
 
-```js
-rollup.rollup({...})
-.then(bundle => bundle.generate({
-  format: 'esm',
-  plugins: [babel.generated({
-    presets: ['@babel/env'],
-    plugins: ['@babel/external-helpers']
-  })]
-}))
-```
-
-```js
-// input
-export default class Foo {}
-
-// output
-var Foo = function Foo() {
-	babelHelpers.classCallCheck(this, Foo);
-};
-
-export default Foo;
-```
-
-Alternatively, you can use imported runtime helpers by adding the `@babel/transform-runtime` plugin. Note that as this is adding imports to your files, you should configure Rollup's format to `esm` and let Babel handle the transformation to another format:
+Note that as this is adding imports to your files, you should configure Rollup's format to `esm` and let Babel handle the transformation to another format:
 
 ```js
 rollup.rollup({...})
@@ -252,6 +229,8 @@ var Foo = function Foo() {
 
 module.exports = Foo;
 ```
+
+Another option is to use `@babel/plugin-external-helpers`, which will reference the global `babelHelpers` object. It is your responsibility to make sure this global variable exists.
 
 ## Configuring Babel 6
 
