@@ -702,9 +702,7 @@ export default getResult;
 		).then(({ code }) => {
 			assert.strictEqual(
 				code,
-				`function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-(function (global, factory) {
+				`(function (global, factory) {
   if (typeof define === "function" && define.amd) {
     define([], factory);
   } else if (typeof exports !== "undefined") {
@@ -716,7 +714,7 @@ export default getResult;
     factory();
     global.unknown = mod.exports;
   }
-})((typeof globalThis === "undefined" ? "undefined" : _typeof(globalThis)) === "object" ? globalThis : (typeof self === "undefined" ? "undefined" : _typeof(self)) === "object" ? self : this, function () {
+})(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
   var answer = 42;
