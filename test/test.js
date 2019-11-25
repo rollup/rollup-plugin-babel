@@ -726,4 +726,19 @@ export default getResult;
 			);
 		});
 	});
+
+	it('loads configuration files when configFile is passed', () => {
+		return bundleWithOutputPlugin('samples/config-file/main.js', {
+			configFile: path.resolve(__dirname, 'samples/config-file/config.json'),
+		}).then(({ code }) =>
+			assert.strictEqual(
+				code,
+				`'use strict';
+
+const answer = Math.pow(42, 2);
+console.log(\`the answer is \${answer}\`);
+`,
+			),
+		);
+	});
 });

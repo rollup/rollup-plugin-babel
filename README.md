@@ -123,7 +123,11 @@ You can run rollup-plugin-babel on the output files instead of the input files b
 import babel from 'rollup-plugin-babel';
 export default {
 	input: 'main.js',
-	plugins: [babel.generated()],
+	plugins: [
+		babel.generated({
+			presets: ['@babel/env'],
+		}),
+	],
 	output: [
 		{ file: 'bundle.cjs.js', format: 'cjs' },
 		{ file: 'bundle.esm.js', format: 'esm' },
@@ -151,7 +155,7 @@ export default {
 
 The `include`, `exclude` and `extensions` options are ignored when the when using `.generated()` will produce warnings, and there are a few more points to note that users should be aware of.
 
-You can also run the plugin twice on the code, once when processing the input files to transpile special syntax and once on the output to transpile to a lower compatibility target:
+You can also run the plugin twice on the code, once when processing the input files to transpile special syntax to JavaScript and once on the output to transpile to a lower compatibility target:
 
 ```js
 // rollup.config.js
@@ -169,9 +173,13 @@ export default {
 };
 ```
 
-### Finding Babel configuration options
+### Babel configuration files
 
-Besides Babel options that are passed directly to this plugin, `babel-generated(...)` will only respect project-wide [Babel configuration files](https://babeljs.io/docs/en/config-files) based on the current working directory when applying it to the generated code. `.babelrc` files will be ignored as they would only apply to files in the same directory or sub-directories, which does not really make sense for generated chunks.
+Unlike the regular `babel` plugin, `babel.generated(...)` will **not** automatically search for [Babel configuration files](https://babeljs.io/docs/en/config-files). Besides passing in Babel options directly, however, you can specify a configuration file manually via Babel's [`configFile`](https://babeljs.io/docs/en/options#configfile) option:
+
+```js
+babel.generated({ configFile: path.resolve(__dirname, 'babel.config.js') });
+```
 
 ### Using formats other than ES modules or CommonJS
 
@@ -188,7 +196,8 @@ rollup.rollup({...})
 .then(bundle => bundle.generate({
   format: 'iife',
   plugins: [babel.generated({
-    allowAllFormats: true
+    allowAllFormats: true,
+    ...
   })]
 }))
 ```

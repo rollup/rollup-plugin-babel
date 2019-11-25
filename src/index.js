@@ -38,12 +38,13 @@ const unpackInputPluginOptions = options =>
 
 const unpackOutputPluginOptions = (options, { format }) =>
 	unpackOptions({
+		configFile: false,
+		sourceType: format === 'es' ? 'module' : 'script',
 		...options,
 		caller: {
 			supportsStaticESM: format === 'es',
 			...options.caller,
 		},
-		sourceType: format === 'es' ? 'module' : 'script',
 	});
 
 function getOptionsWithOverrides(pluginOptions = {}, overrides = {}) {
