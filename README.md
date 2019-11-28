@@ -135,7 +135,7 @@ export default {
 };
 ```
 
-If you only want to apply it to specific outputs, you can use it as an output plugin:
+If you only want to apply it to specific outputs, you can use it as an output plugin (requires at least Rollup v1.27.0):
 
 ```js
 // rollup.config.js
