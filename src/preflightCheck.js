@@ -1,4 +1,4 @@
-import { transformSync } from '@babel/core';
+import * as babel from '@babel/core';
 import { INLINE, RUNTIME, EXTERNAL, BUNDLED } from './constants.js';
 import { addBabelPlugin } from './utils.js';
 
@@ -25,16 +25,18 @@ function fallbackClassTransform() {
 	};
 }
 
-const PREFLIGHT_INPUT = 'class Foo extends Bar {};\nexport default Foo;';
+const PREFLIGHT_INPUT = 'class Foo extends Bar {}\nexport default Foo;';
 
 const mismatchError = (actual, expected, filename) =>
-	`You have declared using "${expected}" babelHelpers, but transforming ${filename} resulted in "${actual}. Please check your configuration."`;
+	`You have declared using "${expected}" babelHelpers, but transforming ${filename} resulted in "${actual}". Please check your configuration.`;
+
+const inheritsHelperRe = /\/helpers\/(esm\/)?inherits/;
 
 export default function preflightCheck(ctx, babelHelpers, transformOptions) {
-	let check = transformSync(PREFLIGHT_INPUT, transformOptions).code;
+	let check = babel.transformSync(PREFLIGHT_INPUT, transformOptions).code;
 
 	if (~check.indexOf('class ')) {
-		check = transformSync(PREFLIGHT_INPUT, addBabelPlugin(transformOptions, fallbackClassTransform)).code;
+		check = babel.transformSync(PREFLIGHT_INPUT, addBabelPlugin(transformOptions, fallbackClassTransform)).code;
 	}
 
 	if (
@@ -45,7 +47,7 @@ export default function preflightCheck(ctx, babelHelpers, transformOptions) {
 		ctx.error(MODULE_ERROR);
 	}
 
-	if (check.match(/\/helpers\/(esm\/)?inherits/)) {
+	if (inheritsHelperRe.test(check)) {
 		if (babelHelpers === RUNTIME) {
 			return;
 		}
@@ -62,6 +64,11 @@ export default function preflightCheck(ctx, babelHelpers, transformOptions) {
 	if (~check.indexOf('function _inherits')) {
 		if (babelHelpers === INLINE || babelHelpers === BUNDLED) {
 			return;
+		}
+		if (babelHelpers === RUNTIME && !transformOptions.plugins.length) {
+			ctx.error(
+				`You must use the \`@babel/plugin-transform-runtime\` plugin when \`babelHelpers\` is "${RUNTIME}", but you have configured no babel plugins.\n`,
+			);
 		}
 		ctx.error(mismatchError(INLINE, babelHelpers, transformOptions.filename));
 	}
