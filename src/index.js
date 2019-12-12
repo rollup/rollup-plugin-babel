@@ -26,7 +26,7 @@ const unpackOptions = ({
 	},
 });
 
-const unpackInputPluginOptions = ({ skipBabelHelpersCheck = false, ...rest }) => {
+const unpackInputPluginOptions = ({ skipPreflightCheck = false, ...rest }) => {
 	if (!rest.babelHelpers) {
 		throw new Error(
 			'You have to specify how do you want to bundle/import "Babel helpers" (runtime functions inserted by Babel which are used by some transformations).\n\n' +
@@ -39,7 +39,7 @@ const unpackInputPluginOptions = ({ skipBabelHelpersCheck = false, ...rest }) =>
 	}
 	return unpackOptions({
 		...rest,
-		skipBabelHelpersCheck,
+		skipPreflightCheck,
 		caller: {
 			supportsStaticESM: true,
 			supportsDynamicImport: true,
@@ -89,7 +89,7 @@ function createBabelInputPluginFactory(customCallback = returnObject) {
 			extensions,
 			babelHelpers,
 			include,
-			skipBabelHelpersCheck,
+			skipPreflightCheck,
 			...babelOptions
 		} = unpackInputPluginOptions(pluginOptionsWithOverrides);
 
@@ -113,7 +113,7 @@ function createBabelInputPluginFactory(customCallback = returnObject) {
 				if (filename === HELPERS) return null;
 
 				return transformCode(code, { ...babelOptions, filename }, overrides, customOptions, this, transformOptions => {
-					if (!skipBabelHelpersCheck) {
+					if (!skipPreflightCheck) {
 						preflightCheck(this, babelHelpers, transformOptions);
 					}
 
