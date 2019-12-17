@@ -34,50 +34,25 @@ npm install --save-dev rollup-plugin-babel@3
 ### Command Line (`rollup`)
 
 #### Configuration
+
 `rollup.config.js` ([docs](https://rollupjs.org/guide/en/#configuration-files)):
 
 ```js
-const babel = require('rollup-plugin-babel');
-const pkg = require('./package.json');
+import babel from 'rollup-plugin-babel';
+import pkg from './package.json';
 
-const files = [
-  {
-    input: 'src/index.js',
-    output: [
-      {
-        file: pkg.module,
-        format: 'es',
-        sourcemap: true
-      }
-    ],
-    plugins: [
-      babel(),
-    ]
-  }
-];
-export default files;
-```
-
-`babel.config.js` ([docs](https://babeljs.io/docs/en/config-files#project-wide-configuration)):
-
-```js
 const config = {
-  'presets': [
-    [
-      '@babel/preset-env',
-      {
-        'targets': {
-          "browsers": ["last 2 versions", "ie >= 11"]
-        },
-      },
-    ],
-  ],
+	input: 'src/index.js',
+	output: [
+		{
+			file: pkg.module,
+			format: 'esm',
+		},
+	],
+	plugins: [babel()],
+};
 
-  include: [/src/],
-  exclude: [/node_modules/],
-}
-
-module.exports = config
+export default config;
 ```
 
 ### Programmatic
