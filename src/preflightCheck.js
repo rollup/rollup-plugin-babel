@@ -32,11 +32,12 @@ const mismatchError = (actual, expected, filename) =>
 
 const inheritsHelperRe = /\/helpers\/(esm\/)?inherits/;
 
-export default function preflightCheck(ctx, babelHelpers, transformOptions) {
-	let check = babel.transformSync(PREFLIGHT_INPUT, transformOptions).code;
+export default async function preflightCheck(ctx, babelHelpers, transformOptions) {
+	let check = (await babel.transformAsync(PREFLIGHT_INPUT, transformOptions)).code;
 
 	if (~check.indexOf('class ')) {
-		check = babel.transformSync(PREFLIGHT_INPUT, addBabelPlugin(transformOptions, fallbackClassTransform)).code;
+		check = (await babel.transformAsync(PREFLIGHT_INPUT, addBabelPlugin(transformOptions, fallbackClassTransform)))
+			.code;
 	}
 
 	if (

@@ -113,17 +113,24 @@ function createBabelInputPluginFactory(customCallback = returnObject) {
 				if (!filter(filename)) return null;
 				if (filename === HELPERS) return null;
 
-				return transformCode(code, { ...babelOptions, filename }, overrides, customOptions, this, transformOptions => {
-					if (!skipPreflightCheck) {
-						preflightCheck(this, babelHelpers, transformOptions);
-					}
+				return transformCode(
+					code,
+					{ ...babelOptions, filename },
+					overrides,
+					customOptions,
+					this,
+					async transformOptions => {
+						if (!skipPreflightCheck) {
+							await preflightCheck(this, babelHelpers, transformOptions);
+						}
 
-					if (babelHelpers === BUNDLED) {
-						transformOptions = addBabelPlugin(transformOptions, bundledHelpersPlugin);
-					}
+						if (babelHelpers === BUNDLED) {
+							transformOptions = addBabelPlugin(transformOptions, bundledHelpersPlugin);
+						}
 
-					return transformOptions;
-				});
+						return transformOptions;
+					},
+				);
 			},
 		};
 	};
