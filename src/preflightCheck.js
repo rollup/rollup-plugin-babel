@@ -15,17 +15,20 @@ const UNEXPECTED_ERROR =
 	'An unexpected situation arose. Please raise an issue at ' +
 	'https://github.com/rollup/rollup-plugin-babel/issues. Thanks!';
 
-function fallbackClassTransform() {
+const PREFLIGHT_TEST_STRING = '__ROLLUP__PREFLIGHT_CHECK_DO_NOT_TOUCH__';
+const PREFLIGHT_INPUT = `export default "${PREFLIGHT_TEST_STRING}";`;
+
+function helpersTestTransform() {
 	return {
 		visitor: {
-			ClassDeclaration(path, state) {
-				path.replaceWith(state.file.addHelper('inherits'));
+			StringLiteral(path, state) {
+				if (path.node.value === PREFLIGHT_TEST_STRING) {
+					path.replaceWith(state.file.addHelper('inherits'));
+				}
 			},
 		},
 	};
 }
-
-const PREFLIGHT_INPUT = 'class Foo extends Bar {}\nexport default Foo;';
 
 const mismatchError = (actual, expected, filename) =>
 	`You have declared using "${expected}" babelHelpers, but transforming ${filename} resulted in "${actual}". Please check your configuration.`;
@@ -33,18 +36,11 @@ const mismatchError = (actual, expected, filename) =>
 const inheritsHelperRe = /\/helpers\/(esm\/)?inherits/;
 
 export default async function preflightCheck(ctx, babelHelpers, transformOptions) {
-	let check = (await babel.transformAsync(PREFLIGHT_INPUT, transformOptions)).code;
+	const finalOptions = addBabelPlugin(transformOptions, helpersTestTransform);
+	const check = (await babel.transformAsync(PREFLIGHT_INPUT, finalOptions)).code;
 
-	if (~check.indexOf('class ')) {
-		check = (await babel.transformAsync(PREFLIGHT_INPUT, addBabelPlugin(transformOptions, fallbackClassTransform)))
-			.code;
-	}
-
-	if (
-		!~check.indexOf('export default') &&
-		!~check.indexOf('export default Foo') &&
-		!~check.indexOf('export { Foo as default }')
-	) {
+	// Babel sometimes splits ExportDefaultDeclaration into 2 statements, so we also check for ExportNamedDeclaration
+	if (!/export (d|{)/.test(check)) {
 		ctx.error(MODULE_ERROR);
 	}
 
@@ -67,9 +63,7 @@ export default async function preflightCheck(ctx, babelHelpers, transformOptions
 			return;
 		}
 		if (babelHelpers === RUNTIME && !transformOptions.plugins.length) {
-			ctx.error(
-				`You must use the \`@babel/plugin-transform-runtime\` plugin when \`babelHelpers\` is "${RUNTIME}", but you have configured no babel plugins.\n`,
-			);
+			ctx.error(`You must use the \`@babel/plugin-transform-runtime\` plugin when \`babelHelpers\` is "${RUNTIME}".\n`);
 		}
 		ctx.error(mismatchError(INLINE, babelHelpers, transformOptions.filename));
 	}
