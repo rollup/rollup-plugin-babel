@@ -1,3 +1,7 @@
+# Moved
+
+This package has moved and is now available at [@rollup/plugin-babel](https://github.com/rollup/plugins). Please update your dependencies. This repository is no longer maintained.
+
 # rollup-plugin-babel
 
 Seamless integration between Rollup and Babel.
